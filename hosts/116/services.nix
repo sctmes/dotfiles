@@ -2,10 +2,12 @@
   config,
   lib,
   pkgs,
+  username,
   ...
 }:
 
 let
+  mihomoDir = "/etc/sctmes/116/mihomo";
   vllmDir = "/etc/sctmes/116/vllm";
   searxngDir = "/etc/sctmes/116/searxng";
 in
@@ -14,6 +16,42 @@ in
 
   config = lib.mkMerge [
     {
+      environment.etc."sctmes/116/mihomo/docker-compose.yml".text = ''
+        services:
+          mihomo:
+            image: docker.io/metacubex/mihomo:latest
+            container_name: mihomo
+            network_mode: host
+            pid: host
+            cap_add:
+              - ALL
+            volumes:
+              - /persist/mihomo:/root/.config/mihomo
+              - /dev/net/tun:/dev/net/tun
+            restart: unless-stopped
+      '';
+
+      systemd.tmpfiles.rules = [
+        "d /persist/mihomo 0750 ${username} users -"
+      ];
+
+      systemd.services.mihomo-compose = {
+        description = "Mihomo via docker-compose";
+        after = [ "docker.service" "network-online.target" ];
+        requires = [ "docker.service" ];
+        wants = [ "network-online.target" ];
+        wantedBy = [ "multi-user.target" ];
+        unitConfig.ConditionPathExists = "/persist/mihomo/config.yaml";
+        serviceConfig = {
+          Type = "oneshot";
+          RemainAfterExit = true;
+          WorkingDirectory = mihomoDir;
+          ExecStart = "${pkgs.docker-compose}/bin/docker-compose -f ${mihomoDir}/docker-compose.yml up -d";
+          ExecStop = "${pkgs.docker-compose}/bin/docker-compose -f ${mihomoDir}/docker-compose.yml down";
+          TimeoutStartSec = "0";
+        };
+      };
+
       environment.etc."sctmes/116/vllm/Dockerfile".text = ''
         FROM vllm/vllm-openai:gemma4
 

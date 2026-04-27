@@ -8,6 +8,7 @@ Current scope:
 - upstream reuse from `github:bioinformatist/dotfiles`
 - system SSD rebuild with `disko`
 - preserved `/data1` mdraid/ext4 data disk
+- local `mihomo` proxy service with embedded `metacubexd` UI, backed by a machine-local config file
 - Docker-hosted Gemma 4 and transcription shim services
 - Home Manager for `ysun`, reusing upstream Codex plus a headless TUI dev profile
 - optional SearXNG integration kept disabled by default until its secret policy is finalized

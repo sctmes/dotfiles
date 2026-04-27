@@ -10,6 +10,7 @@
   imports =
     [
       ./disko-config.nix
+      ./proxy.nix
       ./storage-data1.nix
       ./services.nix
     ]
@@ -43,12 +44,7 @@
 
   virtualisation.docker.daemon.settings.data-root = "/data1/docker";
 
-  networking.firewall.allowedTCPPorts = [
-    22
-    8080
-    8090
-  ]
-  ++ lib.optional config.sctmes.host116.services.searxng.enable 8888;
+  networking.firewall.enable = false;
 
   environment.systemPackages = with pkgs; [
     docker-compose
