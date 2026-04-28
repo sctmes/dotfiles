@@ -1119,11 +1119,11 @@
         "zeroclaw": "zeroclaw"
       },
       "locked": {
-        "lastModified": 1777201530,
-        "narHash": "sha256-qrjC2fuwz0UugDqaYTA21s8Y96YlYpC+KnM05DY29TA=",
+        "lastModified": 1777374329,
+        "narHash": "sha256-aON3MQ1uIiFoDOWK1lw0Xrz/5orhH4SHpcoNjz+owhc=",
         "owner": "bioinformatist",
         "repo": "dotfiles",
-        "rev": "c7b92ce7840a17f9c2d301b003882c8965a00047",
+        "rev": "4b0592da0c8ab9e9a8a1875cf85f8b1e3dd58dc9",
         "type": "github"
       },
       "original": {
