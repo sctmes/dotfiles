@@ -41,5 +41,16 @@
     };
   };
 
+  programs.ssh.matchBlocks."github.com" = {
+    hostname = "ssh.github.com";
+    user = "git";
+    port = 443;
+    identityFile = "~/.ssh/id_ed25519_github";
+    identitiesOnly = true;
+  };
+
+  home.file.".ssh/id_ed25519_github.pub".text =
+    "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPRzq7CIHxYsrrUIW5TFFdea1MbYfkWZx6fQQM6ZBiAd ysun@116-github\n";
+
   services.ssh-agent.enable = true;
 }

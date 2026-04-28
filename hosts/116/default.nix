@@ -31,6 +31,10 @@
   sops.defaultSopsFormat = "yaml";
   sops.age.keyFile = "/persist/var/lib/sops-nix/key.txt";
   sops.secrets."${username}-password".neededForUsers = true;
+  sops.secrets."${username}-github-ssh-key" = {
+    owner = username;
+    path = "/home/${username}/.ssh/id_ed25519_github";
+  };
 
   services.openssh.settings = {
     PasswordAuthentication = true;
