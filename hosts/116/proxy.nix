@@ -1,10 +1,15 @@
 {
+  lib,
   pkgs,
   username,
   ...
 }:
 
 {
+  nix.settings.substituters = lib.mkForce [
+    "https://mirrors.ustc.edu.cn/nix-channels/store"
+  ];
+
   systemd.services.nix-daemon = {
     path = [ pkgs.nushell ];
     preStart = ''

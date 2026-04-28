@@ -40,7 +40,7 @@ Run:
 nu ./scripts/install-116.nu root@192.168.0.116
 ```
 
-That uses `nixos-anywhere` with this repo's `#116` configuration, injects `HTTP_PROXY` / `HTTPS_PROXY` / `ALL_PROXY` plus USTC substituters for the install session, and copies the sops age key into `/mnt/persist/var/lib/sops-nix/key.txt`.
+That uses `nixos-anywhere` with this repo's `#116` configuration, injects `HTTP_PROXY` / `HTTPS_PROXY` / `ALL_PROXY` plus the USTC substituter for the install session, builds and substitutes locally, uploads closures over SSH, and copies the sops age key into `/mnt/persist/var/lib/sops-nix/key.txt`.
 It also writes a generated `hosts/116/hardware-configuration.nix` back into this repo for future rebuilds.
 
 If the proxy address changes, override it explicitly:
@@ -48,6 +48,8 @@ If the proxy address changes, override it explicitly:
 ```nu
 nu ./scripts/install-116.nu root@192.168.0.116 --proxy http://<lan-proxy>:7897
 ```
+
+The default install path intentionally does not list the official NixOS cache as a fallback.
 
 ## What gets rebuilt
 
@@ -85,7 +87,7 @@ nu ./scripts/install-116.nu root@192.168.0.116 --proxy http://<lan-proxy>:7897
   - `ouch`
 - `ysun` also gets `~/.config/nix/local-proxy.nuon`, prefilled with:
   - `http://192.168.0.249:7897`
-  - USTC store mirror + `https://cache.nixos.org`
+  - USTC store mirror
 - `nix-daemon` reads the same file at boot, so post-install `nix` / `nixos-rebuild` keep using the same proxy and substituters
 
 ## Local mihomo config

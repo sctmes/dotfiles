@@ -1,5 +1,6 @@
 {
   inputs,
+  lib,
   ...
 }:
 {
@@ -15,7 +16,6 @@
       NO_PROXY: "127.0.0.1,localhost,internal.domain",
       substituters: [
         "https://mirrors.ustc.edu.cn/nix-channels/store"
-        "https://cache.nixos.org"
       ]
     }
   '';
@@ -23,6 +23,8 @@
   dotfiles.codex.trustedProjects = [
     "/home/ysun/github.com/sctmes/dotfiles"
   ];
+
+  programs.nushell.loginFile.text = lib.mkForce "";
 
   home.sessionVariables = {
     DOTFILES_MAINT_REPO = "/home/ysun/github.com/sctmes/dotfiles";

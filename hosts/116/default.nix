@@ -39,7 +39,7 @@
   };
 
   users.users.${username}.openssh.authorizedKeys.keys = [
-    "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPl8VTGZQ2TvS+sP59TWmfnYRBDcJghyGl/JL+Zb0stV ysun@sctmes-ops"
+    "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGtt7b+dw26OWbwowudCyFf+HwR6Phh/8pUA0DnA26tV ysun@sctmes-ops"
   ];
 
   virtualisation.docker.daemon.settings.data-root = "/data1/docker";
