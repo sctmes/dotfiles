@@ -7,9 +7,9 @@ let
   proxyConfigPath = "$HOME/.config/nix/local-proxy.nuon";
   defaultProxyConfig = ''
     {
-      HTTP_PROXY: "",
-      HTTPS_PROXY: "",
-      ALL_PROXY: "",
+      HTTP_PROXY: "http://127.0.0.1:7890",
+      HTTPS_PROXY: "http://127.0.0.1:7890",
+      ALL_PROXY: "http://127.0.0.1:7890",
       NO_PROXY: "mirrors.ustc.edu.cn,cache.nixos.org,127.0.0.1,localhost,internal.domain",
       substituters: [
         "https://mirrors.ustc.edu.cn/nix-channels/store"
@@ -45,6 +45,12 @@ ${defaultProxyConfig}
 EOF
       chmod 0644 "$proxy_config"
     fi
+
+    # Install-time bootstrap used the operator LAN proxy. Once 116 manages its
+    # own Mihomo service, migrate only that exact bootstrap value to localhost.
+    if grep -q '192\.168\.0\.249:7897' "$proxy_config"; then
+      sed -i 's#http://192\.168\.0\.249:7897#http://127.0.0.1:7890#g' "$proxy_config"
+    fi
   '';
 
   dotfiles.codex.trustedProjects = [
@@ -69,9 +75,7 @@ EOF
   };
 
   programs.ssh.matchBlocks."github.com" = {
-    hostname = "ssh.github.com";
     user = "git";
-    port = 443;
     identityFile = "~/.ssh/id_ed25519_github";
     identitiesOnly = true;
   };

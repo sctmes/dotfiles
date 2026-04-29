@@ -91,6 +91,7 @@ in
           WorkingDirectory = mihomoDir;
           ExecStart = "${pkgs.docker-compose}/bin/docker-compose -f ${mihomoDir}/docker-compose.yml up -d";
           ExecStop = "${pkgs.docker-compose}/bin/docker-compose -f ${mihomoDir}/docker-compose.yml down";
+          ExecStopPost = "-${pkgs.iproute2}/bin/ip link delete Meta";
           TimeoutStartSec = "0";
         };
       };
