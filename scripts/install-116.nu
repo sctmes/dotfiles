@@ -16,7 +16,7 @@ def main [
   let repo_root = ($env.FILE_PWD | path dirname)
   let persist_dir = ($extra_dir | path join "persist" "var" "lib" "sops-nix")
   let runtime_dir = ($extra_dir | path join "var" "lib" "sops-nix")
-  let proxy_config_dir = ($extra_dir | path join "persist" "home" "ysun" ".config" "nix")
+  let proxy_config_dir = ($extra_dir | path join "home" "ysun" ".config" "nix")
   let proxy_config_dst = ($proxy_config_dir | path join "local-proxy.nuon")
   let key_src = "/persist/var/lib/sops-nix/key.txt"
   let key_dst = ($persist_dir | path join "key.txt")

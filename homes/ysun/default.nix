@@ -3,10 +3,49 @@
   lib,
   ...
 }:
+let
+  proxyConfigPath = "$HOME/.config/nix/local-proxy.nuon";
+  defaultProxyConfig = ''
+    {
+      HTTP_PROXY: "",
+      HTTPS_PROXY: "",
+      ALL_PROXY: "",
+      NO_PROXY: "mirrors.ustc.edu.cn,cache.nixos.org,127.0.0.1,localhost,internal.domain",
+      substituters: [
+        "https://mirrors.ustc.edu.cn/nix-channels/store"
+      ]
+    }
+  '';
+in
 {
   imports = [
     inputs.upstream.homeManagerModules.devHeadless
   ];
+
+  home.activation.ensureMutableNixProxyConfig = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+    proxy_config="${proxyConfigPath}"
+    mkdir -p "$(dirname "$proxy_config")"
+
+    if [ -L "$proxy_config" ]; then
+      proxy_target="$(readlink -f "$proxy_config" || true)"
+      tmp_config="$(mktemp)"
+      if [ -n "$proxy_target" ] && [ -f "$proxy_target" ]; then
+        cp "$proxy_target" "$tmp_config"
+      else
+        cat > "$tmp_config" <<'EOF'
+${defaultProxyConfig}
+EOF
+      fi
+      rm -f "$proxy_config"
+      install -m 0644 "$tmp_config" "$proxy_config"
+      rm -f "$tmp_config"
+    elif [ ! -e "$proxy_config" ]; then
+      cat > "$proxy_config" <<'EOF'
+${defaultProxyConfig}
+EOF
+      chmod 0644 "$proxy_config"
+    fi
+  '';
 
   dotfiles.codex.trustedProjects = [
     "/home/ysun/github.com/sctmes/dotfiles"

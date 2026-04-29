@@ -41,7 +41,7 @@ nu ./scripts/install-116.nu root@192.168.0.116 --proxy http://<lan-proxy>:<port>
 ```
 
 That uses `nixos-anywhere` with this repo's `#116` configuration, injects `HTTP_PROXY` / `HTTPS_PROXY` / `ALL_PROXY` plus the USTC substituter for the install session, builds and substitutes locally, uploads closures over SSH, and copies the sops age key into `/mnt/persist/var/lib/sops-nix/key.txt`.
-It also writes the passed proxy into `/mnt/persist/home/ysun/.config/nix/local-proxy.nuon`, so the first boot can reuse the same proxy for GitHub while bypassing USTC/cache via `NO_PROXY`.
+It also writes the passed proxy into `/mnt/home/ysun/.config/nix/local-proxy.nuon`, so the first boot can reuse the same proxy for GitHub while bypassing USTC/cache via `NO_PROXY`.
 It also writes a generated `hosts/116/hardware-configuration.nix` back into this repo for future rebuilds.
 
 There is intentionally no default proxy address. The proxy is site-local runtime input, not a stable repo fact.
