@@ -78,7 +78,9 @@ EOF
     enable = true;
     enableDefaultConfig = false;
     matchBlocks."github.com" = {
+      hostname = "github.com";
       user = "git";
+      port = 22;
       identityFile = "~/.ssh/id_ed25519_github";
       identitiesOnly = true;
     };
