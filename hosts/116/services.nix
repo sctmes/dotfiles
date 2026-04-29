@@ -146,7 +146,7 @@ in
             return JSONResponse({"text": text})
       '';
 
-      environment.etc."sctmes/116/vllm/docker-compose.yml".text = ''
+      sops.templates."jarvis-vllm-compose.yml".content = ''
         services:
           vllm:
             image: vllm/vllm-openai:gemma4-audio
@@ -178,7 +178,7 @@ in
                       capabilities: [gpu]
 
           transcription:
-            image: ghcr.io/speaches-ai/speaches:latest-cuda-12.6.3
+            image: ${config.sops.placeholder."docker-registry-host-ghcr"}/speaches-ai/speaches:latest-cuda-12.6.3
             container_name: transcription-shim
             ports:
               - "8090:8000"
@@ -211,8 +211,8 @@ in
           Type = "oneshot";
           RemainAfterExit = true;
           WorkingDirectory = vllmDir;
-          ExecStart = "${pkgs.docker-compose}/bin/docker-compose -f ${vllmDir}/docker-compose.yml up -d --build";
-          ExecStop = "${pkgs.docker-compose}/bin/docker-compose -f ${vllmDir}/docker-compose.yml down";
+          ExecStart = "${pkgs.docker-compose}/bin/docker-compose -f ${config.sops.templates."jarvis-vllm-compose.yml".path} up -d --build";
+          ExecStop = "${pkgs.docker-compose}/bin/docker-compose -f ${config.sops.templates."jarvis-vllm-compose.yml".path} down";
           TimeoutStartSec = "0";
         };
       };
