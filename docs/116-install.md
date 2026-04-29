@@ -88,26 +88,26 @@ The default install path intentionally does not list the official NixOS cache as
 
 This repository does not store the real subscription URL.
 
-Instead, create `/persist/mihomo/config.yaml` directly on `116` after install.
-Once that file exists, `mihomo-compose.service` can start and will mount the whole `/persist/mihomo` directory into the container.
-The `/persist/mihomo` directory is created for `ysun`, so you can update the local config without changing the declarative repo.
+`mihomo-compose.service` mounts `/persist/mihomo` into the container and starts automatically.
+Before it starts, `mihomo-config-bootstrap.service` creates a minimal `/persist/mihomo/config.yaml` only if the file does not already exist.
+It also patches the controller `secret:` from `sops`, so the shared LAN secret is not stored in git as plaintext.
 
-The local config should at least include:
+You can edit the live config directly on `116`:
+
+```bash
+$EDITOR /persist/mihomo/config.yaml
+sudo systemctl restart mihomo-compose.service
+```
+
+Keep these fields when replacing the file with a subscription-generated config:
 
 - `mixed-port: 7890`
 - `allow-lan: true`
 - `external-controller: 0.0.0.0:9090`
-- `secret: <fill-your-lan-shared-secret>`
 - `external-ui: ./ui`
 - `external-ui-name: metacubexd`
 - `external-ui-url: https://github.com/MetaCubeX/metacubexd/archive/refs/heads/gh-pages.zip`
 - `tun.enable: true`
-
-After writing the file:
-
-```bash
-sudo systemctl start mihomo-compose.service
-```
 
 If you want the machine to use its own local proxy after that, update `~/.config/nix/local-proxy.nuon` to `http://127.0.0.1:7890` and restart `nix-daemon`.
 
@@ -116,20 +116,11 @@ If you want the machine to use its own local proxy after that, update `~/.config
 After `nixos-anywhere` finishes, the shortest path to a usable machine is:
 
 1. Log in as `ysun` with either the configured password or the company operations SSH key.
-2. Create `/persist/mihomo/config.yaml`.
-3. Fill the local Mihomo config with:
-   - your real subscription URL
-   - a LAN-shared `secret` value
-   - the minimum fields listed above for `mixed-port`, `external-controller`, `external-ui`, and `tun`
-4. Start Mihomo:
-
-```bash
-sudo systemctl start mihomo-compose.service
-```
-
-5. If desired, switch `~/.config/nix/local-proxy.nuon` from the temporary LAN proxy to `http://127.0.0.1:7890`, then restart `nix-daemon`.
-6. Clone `sctmes/dotfiles` to `/home/ysun/github.com/sctmes/dotfiles`.
-7. Log in to `codex` manually and continue iterating from the server.
+2. Open `http://192.168.0.116:9090/ui/` and use the LAN-shared Mihomo controller secret.
+3. Import or replace `/persist/mihomo/config.yaml` with the real subscription-generated config while keeping the minimum host fields listed above.
+4. If desired, switch `~/.config/nix/local-proxy.nuon` from the temporary LAN proxy to `http://127.0.0.1:7890`, then restart `nix-daemon`.
+5. Clone `sctmes/dotfiles` to `/home/ysun/github.com/sctmes/dotfiles`.
+6. Log in to `codex` manually and continue iterating from the server.
 
 ## Notes
 

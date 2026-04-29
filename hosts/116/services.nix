@@ -8,11 +8,26 @@
 
 let
   mihomoDir = "/etc/sctmes/116/mihomo";
+  mihomoDefaultConfig = pkgs.writeText "mihomo-default-config.yaml" ''
+    mixed-port: 7890
+    allow-lan: true
+    external-controller: 0.0.0.0:9090
+
+    external-ui: ./ui
+    external-ui-name: metacubexd
+    external-ui-url: https://github.com/MetaCubeX/metacubexd/archive/refs/heads/gh-pages.zip
+
+    tun:
+      enable: true
+  '';
   vllmDir = "/etc/sctmes/116/vllm";
   searxngDir = "/etc/sctmes/116/searxng";
 in
 {
-  options.sctmes.host116.services.searxng.enable = lib.mkEnableOption "SearXNG on host 116";
+  options.sctmes.host116.services = {
+    jarvisVllm.enable = lib.mkEnableOption "Jarvis Gemma stack on host 116";
+    searxng.enable = lib.mkEnableOption "SearXNG on host 116";
+  };
 
   config = lib.mkMerge [
     {
@@ -35,13 +50,41 @@ in
         "d /persist/mihomo 0750 ${username} users -"
       ];
 
+      sops.secrets.mihomo-controller-secret = { };
+
+      systemd.services.mihomo-config-bootstrap = {
+        description = "Bootstrap local Mihomo config";
+        before = [ "mihomo-compose.service" ];
+        requiredBy = [ "mihomo-compose.service" ];
+        serviceConfig = {
+          Type = "oneshot";
+          RemainAfterExit = true;
+        };
+        script = ''
+          set -euo pipefail
+
+          install -d -m 0750 -o ${username} -g users /persist/mihomo
+
+          if [ ! -e /persist/mihomo/config.yaml ]; then
+            install -m 0640 -o ${username} -g users ${mihomoDefaultConfig} /persist/mihomo/config.yaml
+          fi
+
+          secret="$(${pkgs.coreutils}/bin/cat ${config.sops.secrets.mihomo-controller-secret.path})"
+          escaped_secret="$(printf '%s' "$secret" | ${pkgs.gnused}/bin/sed 's/[\/&]/\\&/g')"
+          if ${pkgs.gnugrep}/bin/grep -q '^secret:' /persist/mihomo/config.yaml; then
+            ${pkgs.gnused}/bin/sed -i "s/^secret:.*/secret: $escaped_secret/" /persist/mihomo/config.yaml
+          else
+            ${pkgs.gnused}/bin/sed -i "/^external-controller:/a secret: $escaped_secret" /persist/mihomo/config.yaml
+          fi
+        '';
+      };
+
       systemd.services.mihomo-compose = {
         description = "Mihomo via docker-compose";
         after = [ "docker.service" "network-online.target" ];
         requires = [ "docker.service" ];
         wants = [ "network-online.target" ];
         wantedBy = [ "multi-user.target" ];
-        unitConfig.ConditionPathExists = "/persist/mihomo/config.yaml";
         serviceConfig = {
           Type = "oneshot";
           RemainAfterExit = true;
@@ -51,7 +94,8 @@ in
           TimeoutStartSec = "0";
         };
       };
-
+    }
+    (lib.mkIf config.sctmes.host116.services.jarvisVllm.enable {
       environment.etc."sctmes/116/vllm/Dockerfile".text = ''
         FROM vllm/vllm-openai:gemma4
 
@@ -216,7 +260,7 @@ in
           TimeoutStartSec = "0";
         };
       };
-    }
+    })
     (lib.mkIf config.sctmes.host116.services.searxng.enable {
       sops.templates."jarvis-searxng-settings.yml" = {
         content = ''
