@@ -8,18 +8,6 @@
     inputs.upstream.homeManagerModules.devHeadless
   ];
 
-  xdg.configFile."nix/local-proxy.nuon".text = ''
-    {
-      HTTP_PROXY: "http://192.168.0.249:7897",
-      HTTPS_PROXY: "http://192.168.0.249:7897",
-      ALL_PROXY: "http://192.168.0.249:7897",
-      NO_PROXY: "127.0.0.1,localhost,internal.domain",
-      substituters: [
-        "https://mirrors.ustc.edu.cn/nix-channels/store"
-      ]
-    }
-  '';
-
   dotfiles.codex.trustedProjects = [
     "/home/ysun/github.com/sctmes/dotfiles"
   ];

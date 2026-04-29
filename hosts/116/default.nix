@@ -10,6 +10,7 @@
   imports =
     [
       ./disko-config.nix
+      ./docker.nix
       ./proxy.nix
       ./storage-data1.nix
       ./services.nix
