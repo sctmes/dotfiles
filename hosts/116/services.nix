@@ -19,6 +19,18 @@ let
 
     tun:
       enable: true
+
+    dns:
+      enable: true
+      listen: 0.0.0.0:53
+      enhanced-mode: fake-ip
+      fake-ip-range: 198.18.0.1/16
+      default-nameserver:
+        - 192.168.0.1
+      nameserver:
+        - 192.168.0.1
+        - https://dns.alidns.com/dns-query
+        - https://dns.google/dns-query
   '';
   vllmDir = "/etc/sctmes/116/vllm";
   searxngDir = "/etc/sctmes/116/searxng";
@@ -75,6 +87,23 @@ in
             ${pkgs.gnused}/bin/sed -i "s/^secret:.*/secret: $escaped_secret/" /persist/mihomo/config.yaml
           else
             ${pkgs.gnused}/bin/sed -i "/^external-controller:/a secret: $escaped_secret" /persist/mihomo/config.yaml
+          fi
+
+          if ! ${pkgs.gnugrep}/bin/grep -q '^dns:' /persist/mihomo/config.yaml; then
+            cat >> /persist/mihomo/config.yaml <<'EOF'
+
+dns:
+  enable: true
+  listen: 0.0.0.0:53
+  enhanced-mode: fake-ip
+  fake-ip-range: 198.18.0.1/16
+  default-nameserver:
+    - 192.168.0.1
+  nameserver:
+    - 192.168.0.1
+    - https://dns.alidns.com/dns-query
+    - https://dns.google/dns-query
+EOF
           fi
         '';
       };
