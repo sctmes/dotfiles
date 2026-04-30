@@ -36,6 +36,17 @@
     owner = username;
     path = "/home/${username}/.ssh/id_ed25519_github";
   };
+  sops.secrets.github-mcp-token = {
+    owner = username;
+  };
+  sops.templates."claude-json" = {
+    owner = username;
+    path = "/home/${username}/.claude.json";
+    content = builtins.toJSON {
+      mcpServers.github.env.GITHUB_PERSONAL_ACCESS_TOKEN =
+        config.sops.placeholder.github-mcp-token;
+    };
+  };
 
   services.openssh.settings = {
     PasswordAuthentication = true;
