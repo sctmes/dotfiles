@@ -59,10 +59,29 @@ EOF
 
   programs.nushell.loginFile.text = lib.mkForce "";
 
-  home.sessionVariables = {
-    DOTFILES_MAINT_REPO = "/home/ysun/github.com/sctmes/dotfiles";
-    DOTFILES_MAINT_HOST = "116";
-    DOTFILES_MAINT_PROXY_CONFIG = "/home/ysun/.config/nix/local-proxy.nuon";
+  dotfiles.maint = {
+    enable = true;
+    repo = "/home/ysun/github.com/sctmes/dotfiles";
+    host = "116";
+    proxyConfig = "/home/ysun/.config/nix/local-proxy.nuon";
+    riskMarkers = [
+      "nvidia-x11"
+      "linux-"
+      "docker"
+      "containerd"
+    ];
+    updateGroups = {
+      tools = [
+        "upstream"
+        "sops-nix"
+        "impermanence"
+        "disko"
+      ];
+      base = [
+        "nixpkgs"
+        "home-manager"
+      ];
+    };
   };
 
   programs.git = {
