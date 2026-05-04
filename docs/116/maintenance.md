@@ -5,7 +5,15 @@ this repository and host.
 
 ## Upstream Codex and tool updates
 
-Codex pin updates belong to the upstream desktop maintenance flow.
+Codex pin updates belong to the upstream desktop maintenance flow. Codex is a
+deliberate exception among tools: keep it pinned to the official OpenAI GitHub
+release binary. Do not add a downstream headless `maint-refresh-codex` path for
+`116`.
+
+Other tool updates should stay binary-friendly. Prefer updates that keep using
+binary caches, existing flake inputs, or upstream-provided binary releases. Do
+not add source-heavy tooling to the routine tools path unless that build cost is
+explicitly accepted for this host.
 
 1. In the upstream repository, run:
 

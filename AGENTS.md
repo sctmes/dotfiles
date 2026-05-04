@@ -43,6 +43,8 @@ Do not replace runtime proxy inputs with guessed repo defaults.
 - Scope changes surgically. This repo currently manages `.#116`; do not generalize for imaginary future hosts unless the user asks.
 - Prefer updating the declarative source of truth under `hosts/116/`, `homes/ysun/`, `scripts/`, `docs/`, and `secrets/hosts/116.yaml` instead of applying long-lived manual fixes on the machine.
 - Preserve the headless operating model. Do not add GUI-only dependencies, desktop services, or steps that require local display access unless explicitly requested.
+- Keep Codex updates upstream-owned. Do not reintroduce a downstream headless `maint-refresh-codex`; `116` receives Codex updates by updating the `upstream` flake input after upstream refreshes the official OpenAI release binary pin.
+- Keep routine tool updates binary-friendly. Before adding inputs to the tools maintenance group, consider whether they normally use binary caches or upstream-provided release binaries instead of expensive local source builds.
 - `scripts/install-116.nu` is the canonical install entrypoint. Keep examples aligned with `nu ./scripts/install-116.nu root@192.168.0.116 --proxy http://<lan-proxy>:<port>`.
 - System-level deployment flows in this repo are `nixos-rebuild` for an existing machine and `nixos-anywhere` via `scripts/install-116.nu` for fresh install or reprovisioning. Do not invent alternate deployment paths unless the repo is updated to support them.
 - Rebuild examples should target this flake explicitly, typically `sudo nixos-rebuild switch --flake .#116`.
