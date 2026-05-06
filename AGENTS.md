@@ -45,6 +45,7 @@ Do not replace runtime proxy inputs with guessed repo defaults.
 - Preserve the headless operating model. Do not add GUI-only dependencies, desktop services, or steps that require local display access unless explicitly requested.
 - Keep Codex updates upstream-owned. Do not reintroduce a downstream headless `maint-refresh-codex`; `116` receives Codex updates by updating the `upstream` flake input after upstream refreshes the official OpenAI release binary pin.
 - Keep routine tool updates binary-friendly. Before adding inputs to the tools maintenance group, consider whether they normally use binary caches or upstream-provided release binaries instead of expensive local source builds. Put low-frequency infrastructure inputs such as `sops-nix`, `impermanence`, and `disko` in the infra maintenance group instead.
+- Long-term upstream direction: prefer a lighter reusable/headless flake boundary so headless downstream hosts do not see desktop-only upstream inputs in routine maintenance.
 - `scripts/install-116.nu` is the canonical install entrypoint. Keep examples aligned with `nu ./scripts/install-116.nu root@192.168.0.116 --proxy http://<lan-proxy>:<port>`.
 - System-level deployment flows in this repo are `nixos-rebuild` for an existing machine and `nixos-anywhere` via `scripts/install-116.nu` for fresh install or reprovisioning. Do not invent alternate deployment paths unless the repo is updated to support them.
 - Rebuild examples should target this flake explicitly, typically `sudo nixos-rebuild switch --flake .#116`.

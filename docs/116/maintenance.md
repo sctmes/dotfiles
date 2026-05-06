@@ -32,7 +32,9 @@ explicitly accepted for this host.
 
 Downstream `maint-update-tools` updates the host-declared tools group. For
 `116`, that group includes the `upstream` input, so Codex updates arrive through
-the updated upstream flake input.
+the updated upstream flake input. Base and infrastructure inputs used by both
+repositories follow the downstream inputs, so routine upstream updates do not
+move `sops-nix`, `impermanence`, `disko`, `home-manager`, or `nixpkgs`.
 
 ## Infrastructure updates
 
@@ -84,3 +86,11 @@ repository state with `sudo nixos-rebuild switch --flake ...#116`.
 After switching, open a new Nushell session before checking which `maint-*`
 functions are available. Existing shells may still hold old function
 definitions.
+
+## Long-term upstream boundary
+
+The long-term target is a lighter upstream reusable/headless flake boundary for
+server consumers like `116`. Updating `upstream` may still bring desktop-only
+transitive lock metadata from the full upstream flake; those inputs should not
+enter the `116` closure, but the cleaner end state is an upstream interface that
+does not expose desktop-only inputs to headless downstream repositories.

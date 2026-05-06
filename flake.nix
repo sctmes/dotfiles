@@ -18,7 +18,11 @@
     };
     upstream = {
       url = "github:bioinformatist/dotfiles";
+      inputs.disko.follows = "disko";
+      inputs.home-manager.follows = "home-manager";
+      inputs.impermanence.follows = "impermanence";
       inputs.nixpkgs.follows = "nixpkgs";
+      inputs.sops-nix.follows = "sops-nix";
     };
   };
 
