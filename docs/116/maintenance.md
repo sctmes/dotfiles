@@ -34,6 +34,25 @@ Downstream `maint-update-tools` updates the host-declared tools group. For
 `116`, that group includes the `upstream` input, so Codex updates arrive through
 the updated upstream flake input.
 
+## Infrastructure updates
+
+Use the infrastructure path for low-frequency host infrastructure inputs:
+
+```nu
+maint-update-infra
+maint-check
+maint-switch
+```
+
+For `116`, this group includes:
+
+- `sops-nix`
+- `impermanence`
+- `disko`
+
+This path may build local helper programs, such as `sops-install-secrets`, so do
+not include it in the routine tools refresh.
+
 ## Base updates
 
 Use the base path only during a maintenance window:

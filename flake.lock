@@ -963,11 +963,11 @@
         "zeroclaw": "zeroclaw"
       },
       "locked": {
-        "lastModified": 1777975961,
-        "narHash": "sha256-9NK29BGQPLnqW5zqIhAo5QI3FiZV+Rfa8gRG2WoyCm0=",
+        "lastModified": 1778034001,
+        "narHash": "sha256-LEeEnoKAdfI/nAkhCy2xZJQ2yRpNRKI2U/Ppg+/k4IY=",
         "owner": "bioinformatist",
         "repo": "dotfiles",
-        "rev": "a3e56b4e6fd36d5fca9cd98b48a94cc493ec5e74",
+        "rev": "1b6c6edb14fdc81b44e7d3975e6f65de44d3751a",
         "type": "github"
       },
       "original": {

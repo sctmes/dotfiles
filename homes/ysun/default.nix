@@ -73,6 +73,8 @@ EOF
     updateGroups = {
       tools = [
         "upstream"
+      ];
+      infra = [
         "sops-nix"
         "impermanence"
         "disko"
