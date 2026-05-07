@@ -14,6 +14,7 @@
       ./proxy.nix
       ./storage-data1.nix
       ./services.nix
+      ./users.nix
     ]
     ++ lib.optional (builtins.pathExists ./hardware-configuration.nix) ./hardware-configuration.nix;
 
@@ -22,6 +23,8 @@
   networking.interfaces.enp6s0.useDHCP = true;
 
   time.timeZone = "Asia/Shanghai";
+
+  programs.nano.enable = false;
 
   boot.loader.systemd-boot.enable = true;
   boot.loader.efi.canTouchEfiVariables = true;
@@ -58,14 +61,13 @@
     "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGtt7b+dw26OWbwowudCyFf+HwR6Phh/8pUA0DnA26tV ysun@sctmes-ops"
   ];
 
-  virtualisation.docker.daemon.settings.data-root = "/data1/docker";
-
   networking.firewall.enable = false;
 
   environment.systemPackages = with pkgs; [
     docker-compose
     mdadm
     git
+    ghostty.terminfo
   ];
 
   fileSystems."/persist".neededForBoot = true;
@@ -75,6 +77,8 @@
     directories = [
       "/var/log"
       "/var/lib/nixos"
+      "/var/lib/docker"
+      "/var/lib/ai-serving"
       "/var/lib/systemd/coredump"
       "/var/lib/sops-nix"
     ];

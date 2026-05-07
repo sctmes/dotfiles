@@ -15,10 +15,6 @@
   };
 
   systemd.tmpfiles.rules = [
-    "d /data1/docker 0755 root root -"
-    "d /data1/ai-serving 0755 root root -"
-    "d /data1/ai-serving/models 0755 root root -"
-    "d /data1/ai-serving/searxng 0755 root root -"
-    "d /data1/ai-serving/cache 0755 root root -"
+    "d /data1/backups 0755 root root -"
   ];
 }

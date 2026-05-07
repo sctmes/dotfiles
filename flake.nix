@@ -18,7 +18,11 @@
     };
     upstream = {
       url = "github:bioinformatist/dotfiles";
+      inputs.disko.follows = "disko";
+      inputs.home-manager.follows = "home-manager";
+      inputs.impermanence.follows = "impermanence";
       inputs.nixpkgs.follows = "nixpkgs";
+      inputs.sops-nix.follows = "sops-nix";
     };
   };
 
@@ -54,6 +58,14 @@
             home-manager.useUserPackages = true;
             home-manager.extraSpecialArgs = inputs // specialArgs;
             home-manager.users.${specialArgs.username} = import ./homes/ysun/default.nix;
+            home-manager.users.zky = import ./homes/headless-dev {
+              inherit inputs;
+              username = "zky";
+            };
+            home-manager.users.wangrongfeng = import ./homes/headless-dev {
+              inherit inputs;
+              username = "wangrongfeng";
+            };
           }
           ./hosts/116
         ];

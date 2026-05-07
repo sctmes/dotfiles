@@ -32,6 +32,7 @@ let
         - https://dns.alidns.com/dns-query
         - https://dns.google/dns-query
   '';
+  aiServingDir = "/var/lib/ai-serving";
   vllmDir = "/etc/sctmes/116/vllm";
   searxngDir = "/etc/sctmes/116/searxng";
 in
@@ -60,6 +61,9 @@ in
 
       systemd.tmpfiles.rules = [
         "d /persist/mihomo 0750 ${username} users -"
+        "d ${aiServingDir}/models 0755 root root -"
+        "d ${aiServingDir}/searxng 0755 root root -"
+        "d ${aiServingDir}/cache 0755 root root -"
       ];
 
       sops.secrets.mihomo-controller-secret = { };
@@ -231,7 +235,7 @@ EOF
             ports:
               - "8080:8080"
             volumes:
-              - /data1/ai-serving/models:/models:ro
+              - ${aiServingDir}/models:/models:ro
             environment:
               - NVIDIA_VISIBLE_DEVICES=0
               - PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
@@ -277,8 +281,8 @@ EOF
 
       systemd.services.jarvis-vllm-compose = {
         description = "Jarvis Gemma stack via docker-compose";
-        after = [ "docker.service" "network-online.target" "data1.mount" ];
-        requires = [ "docker.service" "data1.mount" ];
+        after = [ "docker.service" "network-online.target" ];
+        requires = [ "docker.service" ];
         wants = [ "network-online.target" ];
         wantedBy = [ "multi-user.target" ];
         serviceConfig = {
@@ -354,8 +358,8 @@ EOF
 
       systemd.services.jarvis-searxng-compose = {
         description = "Jarvis SearXNG via docker-compose";
-        after = [ "docker.service" "network-online.target" "data1.mount" "jarvis-vllm-compose.service" ];
-        requires = [ "docker.service" "data1.mount" ];
+        after = [ "docker.service" "network-online.target" "jarvis-vllm-compose.service" ];
+        requires = [ "docker.service" ];
         wants = [ "network-online.target" ];
         wantedBy = [ "multi-user.target" ];
         serviceConfig = {
