@@ -7,6 +7,10 @@
 }:
 
 let
+  labelStudioDataDir = "/var/lib/label-studio";
+  labelStudioHost = "https://label.bigdick.live:2053";
+  labelStudioDomain = "label.bigdick.live";
+  labelStudioAdminEmail = "ysun@sctmes.com";
   mihomoDir = "/etc/sctmes/116/mihomo";
   mihomoDefaultConfig = pkgs.writeText "mihomo-default-config.yaml" ''
     mixed-port: 7890
@@ -60,13 +64,136 @@ in
       '';
 
       systemd.tmpfiles.rules = [
+        "d ${labelStudioDataDir} 0755 root root -"
+        "d ${labelStudioDataDir}/data 0755 1001 1001 -"
+        "d ${labelStudioDataDir}/postgres 0700 999 999 -"
+        "z ${labelStudioDataDir} 0755 root root -"
+        "Z ${labelStudioDataDir}/data 0755 1001 root -"
+        "Z ${labelStudioDataDir}/postgres 0700 999 999 -"
         "d /persist/mihomo 0750 ${username} users -"
         "d ${aiServingDir}/models 0755 root root -"
         "d ${aiServingDir}/searxng 0755 root root -"
         "d ${aiServingDir}/cache 0755 root root -"
       ];
 
+      sops.secrets.cloudflare-ddns-token = { };
+      sops.secrets.label-studio-admin-password = { };
+      sops.secrets.label-studio-postgres-password = { };
       sops.secrets.mihomo-controller-secret = { };
+
+      services.caddy = {
+        enable = true;
+        virtualHosts."${labelStudioDomain}:2053".extraConfig = ''
+          tls internal
+          reverse_proxy 127.0.0.1:18080
+        '';
+      };
+
+      sops.templates."cloudflare-ddns-compose.yml".content = ''
+        services:
+          cloudflare-ddns:
+            image: favonia/cloudflare-ddns:1
+            container_name: cloudflare-ddns
+            network_mode: host
+            user: "65532:65532"
+            read_only: true
+            cap_drop:
+              - ALL
+            security_opt:
+              - no-new-privileges:true
+            environment:
+              - CLOUDFLARE_API_TOKEN=${config.sops.placeholder."cloudflare-ddns-token"}
+              - IP4_PROVIDER=none
+              - IP6_PROVIDER=static:240e:3b3:4035:650::116
+              - IP6_DOMAINS=${labelStudioDomain}
+              - PROXIED=true
+            restart: unless-stopped
+      '';
+
+      sops.templates."label-studio-compose.yml".content = ''
+        services:
+          nginx:
+            image: heartexlabs/label-studio:latest
+            container_name: label-studio-nginx
+            ports:
+              - "127.0.0.1:18080:8085"
+            depends_on:
+              - app
+            environment:
+              - LABEL_STUDIO_HOST=${labelStudioHost}
+            volumes:
+              - ${labelStudioDataDir}/data:/label-studio/data:rw
+            command: nginx
+            restart: unless-stopped
+
+          app:
+            image: heartexlabs/label-studio:latest
+            container_name: label-studio-app
+            expose:
+              - "8000"
+            depends_on:
+              - db
+            environment:
+              - DJANGO_DB=default
+              - POSTGRE_NAME=postgres
+              - POSTGRE_USER=postgres
+              - POSTGRE_PASSWORD=${config.sops.placeholder."label-studio-postgres-password"}
+              - POSTGRE_PORT=5432
+              - POSTGRE_HOST=db
+              - LABEL_STUDIO_HOST=${labelStudioHost}
+              - CSRF_TRUSTED_ORIGINS=${labelStudioHost}
+              - LABEL_STUDIO_DISABLE_SIGNUP_WITHOUT_LINK=true
+              - LABEL_STUDIO_USERNAME=${labelStudioAdminEmail}
+              - LABEL_STUDIO_PASSWORD=${config.sops.placeholder."label-studio-admin-password"}
+              - JSON_LOG=1
+            volumes:
+              - ${labelStudioDataDir}/data:/label-studio/data:rw
+            command: label-studio-uwsgi
+            restart: unless-stopped
+
+          db:
+            image: pgautoupgrade/pgautoupgrade:17-alpine
+            container_name: label-studio-db
+            hostname: db
+            environment:
+              - POSTGRES_USER=postgres
+              - POSTGRES_PASSWORD=${config.sops.placeholder."label-studio-postgres-password"}
+            volumes:
+              - ${labelStudioDataDir}/postgres:/var/lib/postgresql/data
+            restart: unless-stopped
+      '';
+
+      systemd.services.cloudflare-ddns-compose = {
+        description = "Cloudflare DDNS via docker-compose";
+        after = [ "docker.service" "network-online.target" ];
+        requires = [ "docker.service" ];
+        wants = [ "network-online.target" ];
+        wantedBy = [ "multi-user.target" ];
+        serviceConfig = {
+          Type = "oneshot";
+          RemainAfterExit = true;
+          WorkingDirectory = "/tmp";
+          ExecStart = "${pkgs.docker-compose}/bin/docker-compose -p cloudflare-ddns -f ${config.sops.templates."cloudflare-ddns-compose.yml".path} up -d";
+          ExecStop = "${pkgs.docker-compose}/bin/docker-compose -p cloudflare-ddns -f ${config.sops.templates."cloudflare-ddns-compose.yml".path} down";
+          TimeoutStartSec = "0";
+        };
+      };
+
+      systemd.services.label-studio-compose = {
+        description = "Label Studio via docker-compose";
+        after = [ "docker.service" "network-online.target" ];
+        requires = [ "docker.service" ];
+        wants = [ "network-online.target" ];
+        wantedBy = [ "multi-user.target" ];
+        serviceConfig = {
+          Type = "oneshot";
+          RemainAfterExit = true;
+          WorkingDirectory = "/tmp";
+          ExecStart = "${pkgs.docker-compose}/bin/docker-compose -p label-studio -f ${config.sops.templates."label-studio-compose.yml".path} up -d";
+          ExecStop = "${pkgs.docker-compose}/bin/docker-compose -p label-studio -f ${config.sops.templates."label-studio-compose.yml".path} down";
+          TimeoutStartSec = "0";
+        };
+      };
 
       systemd.services.mihomo-config-bootstrap = {
         description = "Bootstrap local Mihomo config";

@@ -7,6 +7,8 @@ This repository manages host `116` by composing:
 - upstream Home Manager modules for `ysun` (`Codex + headless TUI dev`)
 - minimal headless Home Manager profiles for research users
 - local `mihomo` Docker compose management with embedded `metacubexd` UI
+- Cloudflare DDNS for the public IPv6 Label Studio DNS record
+- local Label Studio Docker compose management exposed through Caddy HTTPS
 - local `disko` for the system SSD
 - local `/data1` mdraid/ext4 reuse as a slow backup disk
 - local Docker compose definitions for the assistant stack
@@ -30,8 +32,13 @@ This install is intentionally destructive for the system SSD.
 4. Make sure the model tree is available for restore to `/var/lib/ai-serving/models`.
    `/data1` may be used as a backup source, but it is not the managed runtime model path.
 5. If you later enable SearXNG, add its secret back into `secrets/hosts/116.yaml` before switching.
-6. Prepare a LAN HTTP proxy that is reachable from both the operator machine and `116`. In mainland China this is required for GitHub access during install.
-7. Decide whether post-install `nix` traffic should keep using that LAN proxy or later switch to local `mihomo` on `127.0.0.1:7890`.
+6. Verify `secrets/hosts/116.yaml` contains the Cloudflare DDNS token and Label Studio initial passwords:
+   `cloudflare-ddns-token`, `label-studio-admin-password`, and `label-studio-postgres-password`.
+7. Make sure `label.bigdick.live` is proxied through Cloudflare and managed by the DDNS token.
+8. Make sure public IPv6 TCP port `2053` can reach `116`, so Cloudflare can proxy HTTPS traffic to Caddy.
+9. Configure Cloudflare SSL/TLS mode as `Full`, not `Full (strict)`, because Caddy uses an internal origin certificate for this short-lived service.
+10. Prepare a LAN HTTP proxy that is reachable from both the operator machine and `116`. In mainland China this is required for GitHub access during install.
+11. Decide whether post-install `nix` traffic should keep using that LAN proxy or later switch to local `mihomo` on `127.0.0.1:7890`.
 
 ## Remote install
 
@@ -56,11 +63,19 @@ The default install path intentionally does not list the official NixOS cache as
 - `/swap/swapfile` provides a 16G emergency swapfile
 - `/home` persists as its own btrfs subvolume after install, but the old `/home` on the wiped system SSD is not preserved
 - `/var/lib/docker` and `/var/lib/ai-serving` are persisted on the SSD through `/persist`
+- `/var/lib/caddy` and `/var/lib/label-studio` are persisted on the SSD through `/persist`
 - `/data1` is preserved and remounted from the existing mdraid array as a backup disk
 - host firewall is intentionally disabled in this revision
 
 ## Service layout after switch
 
+- `cloudflare-ddns-compose.service`
+  keeps the proxied Cloudflare `AAAA` record for `label.bigdick.live` aligned with this host's public IPv6 address
+  by publishing the stable public IPv6 address `240e:3b3:4035:650::116`
+- `caddy.service`
+  listens on HTTPS port `2053` with an internal origin certificate and reverse-proxies to the local Label Studio compose stack
+- `label-studio-compose.service`
+  exposes Label Studio only on `127.0.0.1:18080`; public access goes through Cloudflare and Caddy
 - `jarvis-vllm-compose.service`
   exposes:
   - `8080` for Gemma 4 OpenAI-compatible API
@@ -69,6 +84,7 @@ The default install path intentionally does not list the official NixOS cache as
   is installed but only starts once `/persist/mihomo/config.yaml` exists
 - Docker uses the standard `/var/lib/docker` path.
 - AI serving model files are read from `/var/lib/ai-serving/models`.
+- Label Studio signs in with the initial admin user `ysun@sctmes.com`.
 
 ## User environment after switch
 
@@ -103,8 +119,10 @@ model-serving hot paths, or regular development checkouts.
 Runtime data lives on the system SSD:
 
 - `/var/lib/docker` for Docker images, layers, and container writable state
+- `/var/lib/caddy` for Caddy ACME certificates and runtime state
 - `/var/lib/ai-serving` for model-serving runtime data
 - `/var/lib/ai-serving/models` for model files consumed by the vLLM compose stack
+- `/var/lib/label-studio` for Label Studio uploaded data and PostgreSQL data
 
 These paths are persisted through `/persist` in the current layout. The long-term
 storage direction is to move `/var/lib/docker` to its own SSD btrfs subvolume
@@ -171,8 +189,18 @@ After `nixos-anywhere` finishes, the shortest path to a usable machine is:
 3. Import or replace `/persist/mihomo/config.yaml` with the real subscription-generated config while keeping the minimum host fields listed above.
 4. If desired, switch `~/.config/nix/local-proxy.nuon` from the temporary LAN proxy to `http://127.0.0.1:7890`, then restart `nix-daemon`.
 5. Restore model files to `/var/lib/ai-serving/models` if the assistant stack is enabled.
-6. Clone `sctmes/dotfiles` to `/home/ysun/github.com/sctmes/dotfiles`.
-7. Log in to `codex` manually and continue iterating from the server.
+6. Check the public Label Studio path:
+
+   ```nu
+   sudo systemctl status cloudflare-ddns-compose.service
+   sudo systemctl status caddy.service
+   sudo systemctl status label-studio-compose.service
+   curl -kI https://localhost:2053
+   ```
+
+7. Log in to `https://label.bigdick.live:2053` as `ysun@sctmes.com` with the initial password from sops, then rotate it in Label Studio.
+8. Clone `sctmes/dotfiles` to `/home/ysun/github.com/sctmes/dotfiles`.
+9. Log in to `codex` manually and continue iterating from the server.
 
 ## Notes
 
@@ -180,3 +208,4 @@ After `nixos-anywhere` finishes, the shortest path to a usable machine is:
   Gemma 4 E4B plus the transcription shim, not the older Qwen plus speaches model setup.
 - SearXNG is intentionally not enabled by default in this revision because its secret handling is still under discussion.
 - `ysun`, `zky`, and `wangrongfeng` are declared accounts after reinstall.
+- Label Studio's public route depends on proxied Cloudflare HTTPS port `2053` plus origin IPv6 reachability on TCP `2053`. It intentionally avoids Caddy's default ACME flow because common inbound ports such as `80` and `443` may be blocked by the ISP.
