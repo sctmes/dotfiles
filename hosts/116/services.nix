@@ -11,6 +11,7 @@ let
   labelStudioHost = "https://label.bigdick.live:2053";
   labelStudioDomain = "label.bigdick.live";
   labelStudioAdminEmail = "ysun@sctmes.com";
+  ddnsGoIpv6Regex = ".*:3e7c:3fff:fed3:88b7$";
   mihomoDir = "/etc/sctmes/116/mihomo";
   mihomoDefaultConfig = pkgs.writeText "mihomo-default-config.yaml" ''
     mixed-port: 7890
@@ -66,10 +67,10 @@ in
       systemd.tmpfiles.rules = [
         "d ${labelStudioDataDir} 0755 root root -"
         "d ${labelStudioDataDir}/data 0755 1001 1001 -"
-        "d ${labelStudioDataDir}/postgres 0700 999 999 -"
+        "d ${labelStudioDataDir}/postgres 0700 70 70 -"
         "z ${labelStudioDataDir} 0755 root root -"
         "Z ${labelStudioDataDir}/data 0755 1001 root -"
-        "Z ${labelStudioDataDir}/postgres 0700 999 999 -"
+        "Z ${labelStudioDataDir}/postgres 0700 70 70 -"
         "d /persist/mihomo 0750 ${username} users -"
         "d ${aiServingDir}/models 0755 root root -"
         "d ${aiServingDir}/searxng 0755 root root -"
@@ -91,23 +92,62 @@ in
 
       sops.templates."cloudflare-ddns-compose.yml".content = ''
         services:
-          cloudflare-ddns:
-            image: favonia/cloudflare-ddns:1
-            container_name: cloudflare-ddns
+          ddns-go:
+            image: jeessy/ddns-go
+            container_name: ddns-go
             network_mode: host
-            user: "65532:65532"
             read_only: true
             cap_drop:
               - ALL
             security_opt:
               - no-new-privileges:true
-            environment:
-              - CLOUDFLARE_API_TOKEN=${config.sops.placeholder."cloudflare-ddns-token"}
-              - IP4_PROVIDER=none
-              - IP6_PROVIDER=static:240e:3b3:4035:650::116
-              - IP6_DOMAINS=${labelStudioDomain}
-              - PROXIED=true
+            volumes:
+              - ${config.sops.templates."ddns-go-config.yaml".path}:/root/.ddns_go_config.yaml:ro
+            command:
+              - -noweb
+              - -f
+              - "300"
+              - -cacheTimes
+              - "5"
+              - -c
+              - /root/.ddns_go_config.yaml
             restart: unless-stopped
+      '';
+
+      sops.templates."ddns-go-config.yaml".content = ''
+        dnsconf:
+          - name: cloudflare
+            ipv4:
+              enable: false
+              gettype: url
+              url: ""
+              netinterface: ""
+              cmd: ""
+              domains:
+                - ""
+            ipv6:
+              enable: true
+              gettype: netInterface
+              url: ""
+              netinterface: enp6s0
+              cmd: ""
+              ipv6reg: "${ddnsGoIpv6Regex}"
+              domains:
+                - "${labelStudioDomain}?proxied=true"
+            dns:
+              name: cloudflare
+              id: ""
+              secret: ${config.sops.placeholder."cloudflare-ddns-token"}
+            ttl: "1"
+        user:
+          username: ""
+          password: ""
+        webhook:
+          webhookurl: ""
+          webhookrequestbody: ""
+          webhookheaders: ""
+        notallowwanaccess: true
+        lang: zh
       '';
 
       sops.templates."label-studio-compose.yml".content = ''
@@ -164,7 +204,7 @@ in
       '';
 
       systemd.services.cloudflare-ddns-compose = {
-        description = "Cloudflare DDNS via docker-compose";
+        description = "Cloudflare DDNS via ddns-go";
         after = [ "docker.service" "network-online.target" ];
         requires = [ "docker.service" ];
         wants = [ "network-online.target" ];
@@ -173,7 +213,7 @@ in
           Type = "oneshot";
           RemainAfterExit = true;
           WorkingDirectory = "/tmp";
-          ExecStart = "${pkgs.docker-compose}/bin/docker-compose -p cloudflare-ddns -f ${config.sops.templates."cloudflare-ddns-compose.yml".path} up -d";
+          ExecStart = "${pkgs.docker-compose}/bin/docker-compose -p cloudflare-ddns -f ${config.sops.templates."cloudflare-ddns-compose.yml".path} up -d --remove-orphans";
           ExecStop = "${pkgs.docker-compose}/bin/docker-compose -p cloudflare-ddns -f ${config.sops.templates."cloudflare-ddns-compose.yml".path} down";
           TimeoutStartSec = "0";
         };

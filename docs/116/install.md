@@ -71,7 +71,7 @@ The default install path intentionally does not list the official NixOS cache as
 
 - `cloudflare-ddns-compose.service`
   keeps the proxied Cloudflare `AAAA` record for `label.bigdick.live` aligned with this host's public IPv6 address
-  by publishing the stable public IPv6 address `240e:3b3:4035:650::116`
+  by running `ddns-go` against `enp6s0` and matching the stable IPv6 interface identifier
 - `caddy.service`
   listens on HTTPS port `2053` with an internal origin certificate and reverse-proxies to the local Label Studio compose stack
 - `label-studio-compose.service`
