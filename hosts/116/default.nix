@@ -7,16 +7,15 @@
 }:
 
 {
-  imports =
-    [
-      ./disko-config.nix
-      ./docker.nix
-      ./proxy.nix
-      ./storage-data1.nix
-      ./services.nix
-      ./users.nix
-    ]
-    ++ lib.optional (builtins.pathExists ./hardware-configuration.nix) ./hardware-configuration.nix;
+  imports = [
+    ./disko-config.nix
+    ./docker.nix
+    ./proxy.nix
+    ./storage-data1.nix
+    ./services.nix
+    ./users.nix
+  ]
+  ++ lib.optional (builtins.pathExists ./hardware-configuration.nix) ./hardware-configuration.nix;
 
   networking.hostName = "bigdick";
   networking.useDHCP = false;
@@ -42,15 +41,8 @@
   sops.secrets.github-mcp-token = {
     owner = username;
   };
-  sops.templates."claude-json" = {
-    owner = username;
-    path = "/home/${username}/.claude.json";
-    content = builtins.toJSON {
-      mcpServers.github.env.GITHUB_PERSONAL_ACCESS_TOKEN =
-        config.sops.placeholder.github-mcp-token;
-    };
-  };
-
+  home-manager.users.${username}.dotfiles.codex.githubTokenFile =
+    config.sops.secrets.github-mcp-token.path;
   services.openssh.settings = {
     PasswordAuthentication = true;
     KbdInteractiveAuthentication = false;
