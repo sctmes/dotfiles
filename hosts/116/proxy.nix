@@ -11,7 +11,6 @@
   nix.settings.substituters = lib.mkForce [
     "https://mirrors.ustc.edu.cn/nix-channels/store"
   ];
-  nix.settings.extra-substituters = lib.mkForce [ ];
 
   dotfiles.nixProxy = {
     enable = true;

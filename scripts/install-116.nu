@@ -5,6 +5,8 @@ def main [
   --extra-dir: string = "/tmp/sctmes-116-extra",
   --proxy: string,
   --substituters: string = "https://mirrors.ustc.edu.cn/nix-channels/store",
+  --extra-substituters: string = "https://yazelix.cachix.org",
+  --extra-trusted-public-keys: string = "yazelix.cachix.org-1:ZgxIjQvaP0VTWL8Racx27mpUNzDJ97xC2y7QWYjmGNM=",
   --phases: string = "kexec,disko,install,reboot",
 ] {
   if ($proxy | is-empty) {
@@ -21,7 +23,7 @@ def main [
   let key_src = "/persist/var/lib/sops-nix/key.txt"
   let key_dst = ($persist_dir | path join "key.txt")
   let runtime_key_dst = ($runtime_dir | path join "key.txt")
-  let nix_config = $"substituters = ($substituters)"
+  let nix_config = $"substituters = ($substituters)\nextra-substituters = ($extra_substituters)\nextra-trusted-public-keys = ($extra_trusted_public_keys)"
   let no_proxy = "mirrors.ustc.edu.cn,cache.nixos.org,127.0.0.1,localhost,internal.domain"
 
   mkdir $persist_dir
@@ -49,6 +51,6 @@ def main [
     NIX_CONFIG: $nix_config
     SSH_AUTH_SOCK: ""
   } {
-    ^nix run github:nix-community/nixos-anywhere -- --flake $"($repo_root)#116" --option substituters $substituters --build-on local --no-substitute-on-destination --ssh-option IdentityAgent=none --ssh-option IdentitiesOnly=yes --phases $phases --extra-files $extra_dir --generate-hardware-config nixos-generate-config $"($repo_root)/hosts/116/hardware-configuration.nix" --target-host $target
+    ^nix run github:nix-community/nixos-anywhere -- --flake $"($repo_root)#116" --option substituters $substituters --option extra-substituters $extra_substituters --option extra-trusted-public-keys $extra_trusted_public_keys --build-on local --no-substitute-on-destination --ssh-option IdentityAgent=none --ssh-option IdentitiesOnly=yes --phases $phases --extra-files $extra_dir --generate-hardware-config nixos-generate-config $"($repo_root)/hosts/116/hardware-configuration.nix" --target-host $target
   }
 }
