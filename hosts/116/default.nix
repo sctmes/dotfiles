@@ -23,6 +23,7 @@
 
   time.timeZone = "Asia/Shanghai";
 
+  programs.nix-ld.enable = true;
   programs.nano.enable = false;
 
   boot.loader.systemd-boot.enable = true;

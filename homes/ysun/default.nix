@@ -59,6 +59,11 @@ EOF
 
   programs.nushell.loginFile.text = lib.mkForce "";
 
+  programs.direnv = {
+    enable = true;
+    nix-direnv.enable = true;
+  };
+
   dotfiles.maint = {
     enable = true;
     repo = "/home/ysun/github.com/sctmes/dotfiles";
