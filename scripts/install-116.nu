@@ -23,6 +23,19 @@ def main [
   let runtime_key_dst = ($runtime_dir | path join "key.txt")
   let nix_config = $"substituters = ($substituters)\nextra-substituters = ($extra_substituters)\nextra-trusted-public-keys = ($extra_trusted_public_keys)"
   let no_proxy = "mirrors.ustc.edu.cn,cache.nixos.org,127.0.0.1,localhost"
+  let expected_extra_substituters = ($extra_substituters | split row " " | where {|item| not ($item | is-empty) })
+  let expected_extra_trusted_public_keys = ($extra_trusted_public_keys | split row " " | where {|item| not ($item | is-empty) })
+  let effective_nix_config = (with-env { NIX_CONFIG: $nix_config } { ^nix config show --json | from json })
+  let effective_substituters = $effective_nix_config.substituters.value
+  let effective_trusted_public_keys = $effective_nix_config."trusted-public-keys".value
+  let missing_substituters = ($expected_extra_substituters | where {|url| not ($effective_substituters | any {|configured| $configured == $url }) })
+  let missing_trusted_public_keys = ($expected_extra_trusted_public_keys | where {|key| not ($effective_trusted_public_keys | any {|configured| $configured == $key }) })
+
+  if ((not ($missing_substituters | is-empty)) or (not ($missing_trusted_public_keys | is-empty))) {
+    error make {
+      msg: $"Install-time Nix cache settings were ignored. Missing substituters: (($missing_substituters | str join ', ')); missing trusted public keys: (($missing_trusted_public_keys | str join ', ')). Run from a Nix trusted user or configure the operator machine's Nix daemon before reinstalling."
+    }
+  }
 
   mkdir $persist_dir
   mkdir $runtime_dir

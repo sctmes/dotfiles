@@ -38,7 +38,8 @@ This install is intentionally destructive for the system SSD.
 8. Make sure public IPv6 TCP port `2053` can reach `116`, so Cloudflare can proxy HTTPS traffic to Caddy.
 9. Configure Cloudflare SSL/TLS mode as `Full`, not `Full (strict)`, because Caddy uses an internal origin certificate for this short-lived service.
 10. Prepare a LAN HTTP proxy that is reachable from both the operator machine and `116`. In mainland China this is required for GitHub access during install.
-11. After install, steady-state Nix traffic uses the declarative proxy in `hosts/116/proxy.nix`, currently `http://127.0.0.1:7890`.
+11. Make sure the operator machine's Nix daemon already trusts the Yazelix Cachix settings, or run the install script from a Nix trusted user.
+12. After install, steady-state Nix traffic uses the declarative proxy in `hosts/116/proxy.nix`, currently `http://127.0.0.1:7890`.
 
 ## Remote install
 
@@ -48,7 +49,7 @@ Run:
 nu ./scripts/install-116.nu root@192.168.0.116 --proxy http://<lan-proxy>:<port>
 ```
 
-That uses `nixos-anywhere` with this repo's `#116` configuration, injects `HTTP_PROXY` / `HTTPS_PROXY` / `ALL_PROXY` plus the USTC and official NixOS substituters for the install session, builds and substitutes locally, uploads closures over SSH, and copies the sops age key into `/mnt/persist/var/lib/sops-nix/key.txt`.
+That uses `nixos-anywhere` with this repo's `#116` configuration, injects `HTTP_PROXY` / `HTTPS_PROXY` / `ALL_PROXY` plus the USTC, official NixOS, and Yazelix Cachix substituters for the install session, builds and substitutes locally, uploads closures over SSH, and copies the sops age key into `/mnt/persist/var/lib/sops-nix/key.txt`.
 It also writes a generated `hosts/116/hardware-configuration.nix` back into this repo for future rebuilds.
 
 There is intentionally no default proxy address. The proxy is site-local runtime input, not a stable repo fact.
@@ -80,7 +81,7 @@ The installed system declares its steady-state proxy and cache policy through `h
   - `8080` for Gemma 4 OpenAI-compatible API
   - `8090` for the transcription compatibility shim
 - `mihomo-compose.service`
-  is installed but only starts once `/persist/mihomo/config.yaml` exists
+  starts after `mihomo-config-bootstrap.service` creates or patches `/persist/mihomo/config.yaml`
 - Docker uses the standard `/var/lib/docker` path.
 - AI serving model files are read from `/var/lib/ai-serving/models`.
 - Label Studio signs in with the initial admin user `ysun@sctmes.com`.
