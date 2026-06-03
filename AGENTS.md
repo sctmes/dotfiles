@@ -23,19 +23,20 @@ Prefer Nushell syntax when writing or updating repo commands, examples, and help
 When executing Nushell snippets through Codex tools, do not rely on the tool's shell selection alone.
 Invoke Nushell explicitly as `nu -c '...'`, otherwise the command may still be interpreted by `/bin/sh`.
 
-### Proxy Configuration Is Runtime State
+### Proxy Configuration Is Declarative
 
-This repo intentionally does not hardcode a universal install proxy.
-The install path expects a site-local LAN proxy passed at runtime to `scripts/install-116.nu`.
+This repo intentionally does not hardcode a universal install-time proxy.
+The install path accepts a site-local LAN proxy as a runtime argument to
+`scripts/install-116.nu`, but steady-state Nix proxy and cache behavior is
+declared through `hosts/116/proxy.nix` and the upstream `nixNetwork` module.
 
 If network access looks broken during install or rebuild work, inspect:
 
-- `~/.config/nix/local-proxy.nuon`
-- `homes/ysun/default.nix`
 - `hosts/116/proxy.nix`
+- `scripts/install-116.nu`
 - `docs/116/install.md`
 
-Do not replace runtime proxy inputs with guessed repo defaults.
+Do not reintroduce long-lived mutable proxy files for steady-state Nix behavior.
 
 ## Key Constraints
 

@@ -4,7 +4,7 @@ def main [
   target: string = "root@192.168.0.116",
   --extra-dir: string = "/tmp/sctmes-116-extra",
   --proxy: string,
-  --substituters: string = "https://mirrors.ustc.edu.cn/nix-channels/store",
+  --substituters: string = "https://mirrors.ustc.edu.cn/nix-channels/store https://cache.nixos.org",
   --extra-substituters: string = "https://yazelix.cachix.org",
   --extra-trusted-public-keys: string = "yazelix.cachix.org-1:ZgxIjQvaP0VTWL8Racx27mpUNzDJ97xC2y7QWYjmGNM=",
   --phases: string = "kexec,disko,install,reboot",
@@ -18,26 +18,16 @@ def main [
   let repo_root = ($env.FILE_PWD | path dirname)
   let persist_dir = ($extra_dir | path join "persist" "var" "lib" "sops-nix")
   let runtime_dir = ($extra_dir | path join "var" "lib" "sops-nix")
-  let proxy_config_dir = ($extra_dir | path join "home" "ysun" ".config" "nix")
-  let proxy_config_dst = ($proxy_config_dir | path join "local-proxy.nuon")
   let key_src = "/persist/var/lib/sops-nix/key.txt"
   let key_dst = ($persist_dir | path join "key.txt")
   let runtime_key_dst = ($runtime_dir | path join "key.txt")
   let nix_config = $"substituters = ($substituters)\nextra-substituters = ($extra_substituters)\nextra-trusted-public-keys = ($extra_trusted_public_keys)"
-  let no_proxy = "mirrors.ustc.edu.cn,cache.nixos.org,127.0.0.1,localhost,internal.domain"
+  let no_proxy = "mirrors.ustc.edu.cn,cache.nixos.org,127.0.0.1,localhost"
 
   mkdir $persist_dir
   mkdir $runtime_dir
-  mkdir $proxy_config_dir
   ^sudo install -m 600 -o $env.USER -g (id -gn) $key_src $key_dst
   ^sudo install -m 600 -o $env.USER -g (id -gn) $key_src $runtime_key_dst
-  {
-    HTTP_PROXY: $proxy
-    HTTPS_PROXY: $proxy
-    ALL_PROXY: $proxy
-    NO_PROXY: $no_proxy
-    substituters: [ $substituters ]
-  } | to nuon | save --force $proxy_config_dst
 
   with-env {
     HTTP_PROXY: $proxy
