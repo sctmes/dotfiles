@@ -1,5 +1,4 @@
 .direnv/
-/.codex
 result
 secrets/*.dec
 secrets/**/*.dec
