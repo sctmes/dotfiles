@@ -3,11 +3,8 @@
 { ... }:
 {
   imports = [
-    inputs.upstream.homeManagerModules.shellHeadless
-    inputs.upstream.homeManagerModules.tuiHeadless
+    inputs.upstream.homeManagerModules.headlessDevTools
   ];
-
-  xdg.enable = true;
 
   home = {
     inherit username;
@@ -16,6 +13,14 @@
     stateVersion = "24.11";
   };
 
+  dotfiles.codex = {
+    trustedProjects = [
+      "/home/${username}/github.com/sctmes/dotfiles"
+    ];
+    writableRoots = [
+      "/home/${username}/.codex/memories"
+    ];
+  };
+
   programs.home-manager.enable = true;
-  programs.ripgrep.enable = true;
 }

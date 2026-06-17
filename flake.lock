@@ -1228,11 +1228,11 @@
         "yazelix": "yazelix"
       },
       "locked": {
-        "lastModified": 1781174974,
-        "narHash": "sha256-Kr3+AGrrlrfTbFaRl4TIs7dDmR3bQS8lOGmfEtskhB8=",
+        "lastModified": 1781689172,
+        "narHash": "sha256-+BFZM9+08Ic+ttLoX2t7bqZExcxIDa7xU1WUzy0rb1Y=",
         "owner": "bioinformatist",
         "repo": "dotfiles",
-        "rev": "cc1d4b3a53dc266ea2f804507ce74a53d067bdf5",
+        "rev": "e25137c3c66260386efe3d9233dc4542ba664cf6",
         "type": "github"
       },
       "original": {

@@ -1,33 +1,34 @@
-# Contributing
+# 贡献说明
 
-This repository manages shared infrastructure. Treat every change as an operational change, not a personal dotfiles tweak.
+本仓库管理共享基础设施。所有改动都按运维变更处理，不按个人 dotfiles
+小改动处理。
 
-## Dependency workflow
+## 依赖和服务变更
 
-If someone needs a new system dependency or service change on host `116`:
+如果需要在 `116` 上新增系统依赖或服务变更：
 
-1. open a PR against this repository
-2. explain the user need and the exact package or service change
-3. wait for `ysun` review
-4. after approval, `ysun` performs the rebuild or reinstall
+1. 向本仓库提交 PR。
+2. 说明用户需求，以及具体要改的包、服务或配置。
+3. 等待 `ysun` review。
+4. 通过后由 `ysun` 执行 rebuild、服务重启或重装。
 
-Do not install long-lived dependencies manually on the machine and expect them to survive rebuilds.
+不要在机器上手工安装长期依赖并假设它们会在 rebuild 后保留。
 
-For routine update ordering, see [docs/116/maintenance.md](./docs/116/maintenance.md).
+日常维护、rebuild 和重装说明见 [docs/116/README.md](./docs/116/README.md)。
 
-## Install and rebuild ownership
+## 安装和 rebuild 责任
 
-- `ysun` is the only declared operator in the current model
-- `ysun` is responsible for:
-  - secret management
-  - `nixos-anywhere` installs
-  - rebuilds
-  - production service restarts
-- `zky` and `wangrongfeng` are trusted research users with Docker access, but no sudo
+- 当前模型中只有 `ysun` 是运维用户。
+- `ysun` 负责：
+  - secret 管理
+  - `nixos-anywhere` 重装
+  - 系统 rebuild
+  - 生产服务重启
+- `zky` 和 `wangrongfeng` 是可信研究用户，有 Docker 权限，没有 sudo。
 
-## Host 116 expectations
+## 116 主机约定
 
-- the system SSD is declarative and may be fully rebuilt
-- `/data1` is the preserved slow backup volume, not a runtime Docker or model-serving path
-- `/home` on the system SSD is treated as disposable during reinstall
-- declared users are recreated after reinstall, but personal data still needs an explicit backup or migration plan
+- 系统 SSD 是声明式管理的，可以被完整重建。
+- `/data1` 是保留的慢速备份盘，不是 Docker 或模型服务运行目录。
+- 重装时系统 SSD 上的旧 `/home` 不保证保留。
+- 声明式用户会在重装后重建，但个人数据仍需要单独备份或迁移。
