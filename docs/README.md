@@ -2,4 +2,4 @@
 
 | 主机 | 文档 |
 | --- | --- |
-| [116](116/README.md) | 无头 GPU 服务器 |
+| [116](116/README.md) | headless GPU 服务器 |

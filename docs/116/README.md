@@ -1,15 +1,12 @@
 # 116 服务器说明
 
-`116` 是一台无头 GPU 服务器，由本仓库通过 NixOS 管理。日常操作以
-SSH、Nushell、systemd、Docker 和文本配置为主，不假设有图形界面。
+`116` 是一台 headless GPU 服务器，由本仓库通过 NixOS 管理。
 
 ## 用户和权限
 
-- `ysun` 是当前运维用户，负责 secrets、重装、系统 rebuild 和生产服务
-  重启。
+- `ysun` 是当前运维用户，负责 secrets、重装、系统 rebuild 和生产服务重启。
 - `zky` 和 `wangrongfeng` 是研究用户，有 Docker 权限，没有 sudo。
-- 长期依赖和服务变更都应该通过本仓库 PR 进入声明式配置，不要依赖手工
-  安装。
+- 长期依赖和服务变更都应该通过本仓库 PR 进入声明式配置，不要依赖手工安装。
 
 ## 日常使用
 
@@ -28,8 +25,7 @@ maint-check
 maint-switch
 ```
 
-`maint-switch` 只应用当前仓库状态，不会自动更新 flake inputs。需要更新依赖
-时先开 PR，由 `ysun` 确认后再 rebuild。
+`maint-switch` 只应用当前仓库状态，不会自动更新 flake inputs。需要更新依赖时先开 PR，由 `ysun` 确认后再 rebuild。
 
 ## 主要服务
 
@@ -56,8 +52,7 @@ maint-switch
 - `/var/lib/label-studio`
 - `/var/lib/caddy`
 
-这些路径通过 `/persist` 持久化。重装系统 SSD 时，不要假设旧 `/home` 会被
-保留；需要保留的个人数据应提前备份或迁移。
+这些路径通过 `/persist` 持久化。重装系统 SSD 时，不要假设旧 `/home` 会被保留；需要保留的个人数据应提前备份或迁移。
 
 ## 重装流程
 
@@ -93,14 +88,11 @@ nu ./scripts/install-116.nu root@192.168.0.116 --proxy http://<lan-proxy>:<port>
 5. 在 `https://label.bigdick.live:2053` 登录 Label Studio 并轮换初始密码。
 6. 克隆本仓库到 `/home/ysun/github.com/sctmes/dotfiles`。
 
-## 无头开发环境
+## headless 开发环境
 
-`zky` 和 `wangrongfeng` 继承 upstream 的无头开发工具集，包括 `gh`、
-Codex、Context7 MCP、Playwright skill、stop-slop skill、Nushell、Helix、
-Yazi、ripgrep 等。
+`zky` 和 `wangrongfeng` 继承 upstream 的 headless 开发工具集，包括 `gh`、Codex、Context7 MCP、Playwright skill、stop-slop skill、Nushell、Helix、Yazi、ripgrep 等。
 
-每个用户的 Codex memory 和 trusted project 都使用自己的 home 目录，不共享
-`ysun` 的运行状态。
+每个用户的 Codex memory 和 trusted project 都使用自己的 home 目录，不共享 `ysun` 的运行状态。
 
 ## GitHub 认证
 
@@ -110,7 +102,7 @@ Yazi、ripgrep 等。
 gh auth login
 ```
 
-如果需要 Codex GitHub MCP 也稳定使用个人 token，则通过 PR 注册流程：
+如果需要 Codex GitHub MCP 也稳定使用个人 token，请按 [CONTRIBUTING.md](../../CONTRIBUTING.md) 提交 PR；这里记录 token 文件的具体要求：
 
 1. 在 `hosts/116/default.nix` 的 `githubMcpTokenUsers` 中加入用户名。
 2. 新增 per-user SOPS 文件：
@@ -131,8 +123,6 @@ gh auth login
    github-mcp-token: <github token>
    ```
 
-保存后文件应是 SOPS 加密内容。不要把 token 加进共享
-`secrets/hosts/116.yaml`，也不要提交明文 token。
+保存后文件应是 SOPS 加密内容。不要把 token 加进共享 `secrets/hosts/116.yaml`，也不要提交明文 token。
 
-审查这类 PR 时只看：用户名、文件名、SOPS 加密是否正确，以及 token 是否只
-路由给同一个 Unix 用户。
+审查这类 PR 时只看：用户名、文件名、SOPS 加密是否正确，以及 token 是否只路由给同一个 Unix 用户。

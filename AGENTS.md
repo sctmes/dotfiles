@@ -19,8 +19,9 @@ Prefer SSH, TUI tools, systemd inspection, logs, and file-based configuration ch
 
 Repository-facing documentation should be written in Chinese because the
 current audience is Chinese-speaking. Keep commands, paths, service names,
-package names, product names, badges, and other technical identifiers in their
-original form.
+package names, product names, badges, established English technical terms, and
+other technical identifiers in their original form when a literal Chinese
+translation would be awkward or misleading.
 
 `AGENTS.md` is the exception: keep this file in English so agent instructions
 remain unambiguous for coding agents.
