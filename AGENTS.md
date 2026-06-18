@@ -15,6 +15,17 @@ Host `116` is headless.
 Do not assume a desktop session, local browser, clipboard integration, or any GUI recovery path.
 Prefer SSH, TUI tools, systemd inspection, logs, and file-based configuration changes.
 
+### Documentation Language
+
+Repository-facing documentation should be written in Chinese because the
+current audience is Chinese-speaking. Keep commands, paths, service names,
+package names, product names, badges, established English technical terms, and
+other technical identifiers in their original form when a literal Chinese
+translation would be awkward or misleading.
+
+`AGENTS.md` is the exception: keep this file in English so agent instructions
+remain unambiguous for coding agents.
+
 ### Nushell-First Workflow
 
 The repo's shell workflow is Nushell-first.
@@ -34,7 +45,7 @@ If network access looks broken during install or rebuild work, inspect:
 
 - `hosts/116/proxy.nix`
 - `scripts/install-116.nu`
-- `docs/116/install.md`
+- `docs/116/README.md`
 
 Do not reintroduce long-lived mutable proxy files for steady-state Nix behavior.
 
@@ -42,7 +53,7 @@ Do not reintroduce long-lived mutable proxy files for steady-state Nix behavior.
 
 - Secrets must go through `sops-nix`. Do not commit plaintext secrets, tokens, private keys, subscription URLs, or generated secret material.
 - Scope changes surgically. This repo currently manages `.#116`; do not generalize for imaginary future hosts unless the user asks.
-- Prefer updating the declarative source of truth under `hosts/116/`, `homes/ysun/`, `scripts/`, `docs/`, and `secrets/hosts/116.yaml` instead of applying long-lived manual fixes on the machine.
+- Prefer updating the declarative source of truth under `hosts/116/`, `homes/ysun/`, `scripts/`, `docs/`, `secrets/hosts/116.yaml`, and per-user SOPS files instead of applying long-lived manual fixes on the machine.
 - Preserve the headless operating model. Do not add GUI-only dependencies, desktop services, or steps that require local display access unless explicitly requested.
 - Keep Codex updates upstream-owned. Do not reintroduce a downstream headless `maint-refresh-codex`; `116` receives Codex updates by updating the `upstream` flake input after upstream refreshes the official OpenAI release binary pin.
 - Keep routine tool updates binary-friendly. Before adding inputs to the tools maintenance group, consider whether they normally use binary caches or upstream-provided release binaries instead of expensive local source builds. Put low-frequency infrastructure inputs such as `sops-nix`, `impermanence`, and `disko` in the infra maintenance group instead.
@@ -59,8 +70,7 @@ Do not reintroduce long-lived mutable proxy files for steady-state Nix behavior.
 
 Reference existing docs instead of duplicating them:
 
-- `README.md` for the host matrix entry point
+- `README.md` for the repository entry point
 - `CONTRIBUTING.md` for change ownership and rebuild ownership
 - `docs/README.md` for documentation entry points
-- `docs/116/install.md` for install, proxy, persistence, and post-install bootstrap
-- `docs/116/maintenance.md` for routine maintenance and update workflow
+- `docs/116/README.md` for host 116 usage, install, maintenance, storage, and GitHub token enrollment

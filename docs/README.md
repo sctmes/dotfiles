@@ -1,5 +1,5 @@
-# Documentation
+# 文档
 
-| Host | Docs |
+| 主机 | 文档 |
 | --- | --- |
-| [116](116/README.md) | Headless GPU server |
+| [116](116/README.md) | headless GPU 服务器 |

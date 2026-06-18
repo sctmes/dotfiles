@@ -6,6 +6,39 @@
   ...
 }:
 
+let
+  githubMcpTokenUsers = [
+    username
+  ];
+
+  githubMcpTokenSecretName = user: "github-mcp-token-${user}";
+  githubMcpTokenLegacySopsFiles = {
+    ysun = ../../secrets/hosts/116.yaml;
+  };
+  githubMcpTokenSopsFile = user:
+    githubMcpTokenLegacySopsFiles.${user} or (
+      ../../secrets/hosts/116 + "/${githubMcpTokenSecretName user}.yaml"
+    );
+
+  githubMcpTokenSecrets = lib.listToAttrs (
+    map (user: {
+      name = githubMcpTokenSecretName user;
+      value = {
+        sopsFile = githubMcpTokenSopsFile user;
+        key = "github-mcp-token";
+        owner = user;
+      };
+    }) githubMcpTokenUsers
+  );
+
+  githubMcpTokenHomeUsers = lib.listToAttrs (
+    map (user: {
+      name = user;
+      value.dotfiles.codex.githubTokenFile =
+        config.sops.secrets.${githubMcpTokenSecretName user}.path;
+    }) githubMcpTokenUsers
+  );
+in
 {
   imports = [
     ./disko-config.nix
@@ -34,16 +67,15 @@
   sops.defaultSopsFile = ../../secrets/hosts/116.yaml;
   sops.defaultSopsFormat = "yaml";
   sops.age.keyFile = "/persist/var/lib/sops-nix/key.txt";
-  sops.secrets."${username}-password".neededForUsers = true;
-  sops.secrets."${username}-github-ssh-key" = {
-    owner = username;
-    path = "/home/${username}/.ssh/id_ed25519_github";
-  };
-  sops.secrets.github-mcp-token = {
-    owner = username;
-  };
-  home-manager.users.${username}.dotfiles.codex.githubTokenFile =
-    config.sops.secrets.github-mcp-token.path;
+  sops.secrets = {
+    "${username}-password".neededForUsers = true;
+    "${username}-github-ssh-key" = {
+      owner = username;
+      path = "/home/${username}/.ssh/id_ed25519_github";
+    };
+  }
+  // githubMcpTokenSecrets;
+  home-manager.users = githubMcpTokenHomeUsers;
   services.openssh.settings = {
     PasswordAuthentication = true;
     KbdInteractiveAuthentication = false;

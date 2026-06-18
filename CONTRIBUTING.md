@@ -1,33 +1,29 @@
-# Contributing
+# 贡献说明
 
-This repository manages shared infrastructure. Treat every change as an operational change, not a personal dotfiles tweak.
+本仓库管理共享基础设施。所有改动都按运维变更处理，不按个人 dotfiles 小改动处理。
 
-## Dependency workflow
+## 依赖和服务变更
 
-If someone needs a new system dependency or service change on host `116`:
+如果需要新增系统依赖、长期服务或会影响其他用户的配置：
 
-1. open a PR against this repository
-2. explain the user need and the exact package or service change
-3. wait for `ysun` review
-4. after approval, `ysun` performs the rebuild or reinstall
+1. 向本仓库提交 PR。
+2. 说明用户需求，以及具体要改的包、服务或配置。
+3. 等待对应主机的运维用户 review。
+4. 通过后由运维用户执行 rebuild、服务重启或重装。
 
-Do not install long-lived dependencies manually on the machine and expect them to survive rebuilds.
+不要在机器上手工安装长期依赖并假设它们会在 rebuild 后保留。
 
-For routine update ordering, see [docs/116/maintenance.md](./docs/116/maintenance.md).
+已有主机的日常维护、rebuild 和重装说明见对应主机文档；当前可参考 [docs/116/README.md](./docs/116/README.md)。
 
-## Install and rebuild ownership
+## 责任边界
 
-- `ysun` is the only declared operator in the current model
-- `ysun` is responsible for:
-  - secret management
-  - `nixos-anywhere` installs
-  - rebuilds
-  - production service restarts
-- `zky` and `wangrongfeng` are trusted research users with Docker access, but no sudo
+- 运维用户负责 secret 管理、重装、系统 rebuild 和生产服务重启。
+- 研究或业务用户可以提交 PR 申请依赖、服务或 token 接入变更。
+- 非运维用户不要依赖手工安装的长期状态，也不要把个人 secret 放进共享 secret 文件。
+- 具体用户名、权限和主机约定以对应主机文档为准。
 
-## Host 116 expectations
+## 主机文档
 
-- the system SSD is declarative and may be fully rebuilt
-- `/data1` is the preserved slow backup volume, not a runtime Docker or model-serving path
-- `/home` on the system SSD is treated as disposable during reinstall
-- declared users are recreated after reinstall, but personal data still needs an explicit backup or migration plan
+- 每台主机应在 `docs/<host>/README.md` 记录日常使用、维护、重装、存储和权限边界。
+- 主机特有的磁盘、网络、服务和用户细节应留在对应主机文档，不要写成全仓库规则。
+- 当前已有主机文档：[docs/116/README.md](./docs/116/README.md)。
