@@ -90,7 +90,7 @@ nu ./scripts/install-116.nu root@192.168.0.116 --proxy http://<lan-proxy>:<port>
 
 ## headless 开发环境
 
-`zky` 和 `wangrongfeng` 继承 upstream 的 headless 开发工具集，包括 `gh`、Codex、Context7 MCP、Playwright skill、stop-slop skill、Nushell、Helix、Yazi、ripgrep 等。
+所有 headless dev 用户都继承 upstream 的 headless 开发工具集，包括 `gh`、Codex、Context7 MCP、Playwright skill、stop-slop skill、Ponytail skills、Nushell、Helix、Yazi、ripgrep 等。
 
 每个用户的 Codex memory 和 trusted project 都使用自己的 home 目录，不共享 `ysun` 的运行状态。
 
