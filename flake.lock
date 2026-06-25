@@ -138,6 +138,22 @@
         "type": "github"
       }
     },
+    "fieldcraft": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1782308019,
+        "narHash": "sha256-D92kNyvF+Dd37z38ntk+DAdMB7ekVws5iq5g8JxBWf0=",
+        "owner": "bioinformatist",
+        "repo": "fieldcraft",
+        "rev": "8450e45985a78ae9152348fd7fd42131b9f13abd",
+        "type": "github"
+      },
+      "original": {
+        "owner": "bioinformatist",
+        "repo": "fieldcraft",
+        "type": "github"
+      }
+    },
     "flake-compat": {
       "flake": false,
       "locked": {
@@ -739,6 +755,23 @@
         "type": "github"
       }
     },
+    "mattpocock-skills": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1781734059,
+        "narHash": "sha256-nuHQ+SG5UerKs334Yk5nsxHOncGXQKF1yVdnwwVpLZ8=",
+        "owner": "mattpocock",
+        "repo": "skills",
+        "rev": "2454c95dc305c158b21a0cdafeb728879dd0359a",
+        "type": "github"
+      },
+      "original": {
+        "owner": "mattpocock",
+        "ref": "v1.0.1",
+        "repo": "skills",
+        "type": "github"
+      }
+    },
     "nixgl": {
       "inputs": {
         "flake-utils": "flake-utils",
@@ -791,11 +824,11 @@
     },
     "nixpkgs-tools": {
       "locked": {
-        "lastModified": 1780749050,
-        "narHash": "sha256-3av0pIjlOWQ6rDbNOmpUSvbNnJkGORQKKjb4LtCZsIY=",
+        "lastModified": 1781577229,
+        "narHash": "sha256-lrp67w8AulE9Ks53n27I45ADSzbOCn4H+CNW1Ck8B+8=",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "a799d3e3886da994fa307f817a6bc705ae538eeb",
+        "rev": "567a49d1913ce81ac6e9582e3553dd90a955875f",
         "type": "github"
       },
       "original": {
@@ -807,11 +840,11 @@
     },
     "nixpkgs-wechat": {
       "locked": {
-        "lastModified": 1780749050,
-        "narHash": "sha256-3av0pIjlOWQ6rDbNOmpUSvbNnJkGORQKKjb4LtCZsIY=",
+        "lastModified": 1781577229,
+        "narHash": "sha256-lrp67w8AulE9Ks53n27I45ADSzbOCn4H+CNW1Ck8B+8=",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "a799d3e3886da994fa307f817a6bc705ae538eeb",
+        "rev": "567a49d1913ce81ac6e9582e3553dd90a955875f",
         "type": "github"
       },
       "original": {
@@ -1209,6 +1242,7 @@
         "disko": [
           "disko"
         ],
+        "fieldcraft": "fieldcraft",
         "home-manager": [
           "home-manager"
         ],
@@ -1216,6 +1250,7 @@
         "impermanence": [
           "impermanence"
         ],
+        "mattpocock-skills": "mattpocock-skills",
         "nixpkgs": [
           "nixpkgs"
         ],
@@ -1228,11 +1263,11 @@
         "yazelix": "yazelix"
       },
       "locked": {
-        "lastModified": 1782114407,
-        "narHash": "sha256-rC+s2NQrQgWMooYX7+vSHVyeOCHiFp+wNfHd3uX53zM=",
+        "lastModified": 1782380167,
+        "narHash": "sha256-pY81Ji+ubsNqm5wKUd0XXiUOyuXKRnBtukg8GC81wro=",
         "owner": "bioinformatist",
         "repo": "dotfiles",
-        "rev": "636ca25e927638d5edb1992cf92e7a57556c11c7",
+        "rev": "0c2ef92250d1b912eaa0fd8a61940c7e68eefc58",
         "type": "github"
       },
       "original": {
