@@ -2,6 +2,36 @@
 
 `116` 是一台 headless GPU 服务器，由本仓库通过 NixOS 管理。
 
+## headless 开发环境
+
+所有 headless dev 用户都继承 upstream 的 headless 开发工具集，包括 `gh`、Codex、Nushell、Helix、Yazi、ripgrep，以及下列 Codex 全局能力：
+
+| 名称 | 类型 | 触发条件 | 功能 |
+| --- | --- | --- | --- |
+| [全局 `AGENTS.md`](https://github.com/bioinformatist/dotfiles/blob/main/home/programs/codex/default.nix) | 全局指令 | Codex 启动后自动读取生成的 `~/.codex/AGENTS.md`。 | 提供全局编码约束：先澄清假设、优先简单方案、做 surgical changes、按目标验证、按 Conventional Commits 写提交信息，并追加已启用 skill 的全局触发说明。 |
+| [GitHub MCP](https://github.com/github/github-mcp-server) | MCP | Codex 注册 `github` MCP；处理 GitHub repo、issue、PR、review、CI 相关任务时调用。 | 通过用户自己的 GitHub token 访问 GitHub context、issues、pull requests、repos、users 和 orgs。token 配置见下方“GitHub 认证”。 |
+| [GitHub curated plugin](https://github.com/bioinformatist/dotfiles/blob/main/home/programs/codex/default.nix) | Skill plugin | Codex 启用 `github@openai-curated`；处理 GitHub issue、PR、review、CI 或发布本地改动时可能触发。 | 在 GitHub MCP 之上提供更高层工作流 skills，例如处理 PR review comments、修复 GitHub Actions CI、梳理 repo/issue/PR 上下文和发布本地修改。 |
+| [Context7 MCP](https://github.com/upstash/context7) | MCP | Codex 注册 `context7` MCP；涉及库、框架、SDK、API、CLI 或云服务当前文档时使用。 | 拉取较新的项目文档，减少依赖过期 API 记忆写代码或排错的风险。 |
+| [Playwright CLI skill](https://github.com/microsoft/playwright-cli/tree/v0.1.14/skills/playwright-cli) | Skill | 浏览器自动化、页面预览、截图、交互验证或 Playwright 相关任务；也可显式要求 `$playwright-cli`。 | 用 Playwright 驱动浏览器，验证 headless web UI、页面状态、截图和交互行为。 |
+| [stop-slop](https://github.com/hardikpandya/stop-slop/tree/8da1f030185bdfe8471220585162991eaeb970e9) | Skill | 英文 PR、issue、release notes、README/docs、公评文本等 publishable prose 的最终润色；也可显式要求 `$stop-slop`。 | 在不改技术事实、命令、日志、标识符和有用不确定性的前提下，去掉公式化 AI 文风。 |
+| [Ponytail](https://github.com/DietrichGebert/ponytail/tree/v4.8.3) | Skill | 用户明确要求 Ponytail、YAGNI、最小可行实现、stdlib/native-first 或最简单方案时，用 `$ponytail`。 | 作为一次性最小实现约束，压低抽象和依赖成本，但不移除安全、验证、无障碍和明确要求的行为。 |
+| [Ponytail Review](https://github.com/DietrichGebert/ponytail/tree/v4.8.3/skills/ponytail-review) | Skill | 用户明确要求 over-engineering review、simplify review、what can we delete，或显式 `$ponytail-review`。 | 只审复杂度：指出可删除的 speculative abstraction、重复造轮子、无用依赖和死弹性。 |
+| [Ponytail Audit](https://github.com/DietrichGebert/ponytail/tree/v4.8.3/skills/ponytail-audit) | Skill | 用户明确要求全仓库 over-engineering audit、find bloat、what can I delete，或显式 `$ponytail-audit`。 | 对整个 repo 做复杂度审计，输出按优先级排序的删除、简化和 stdlib/native 替代建议。 |
+| [Ponytail Debt](https://github.com/DietrichGebert/ponytail/tree/v4.8.3/skills/ponytail-debt) | Skill | 用户明确要求 ponytail debt、列出 `ponytail:` 注释，或显式 `$ponytail-debt`。 | 汇总代码中有意留下的 `ponytail:` 延后事项，避免临时取舍失去上下文。 |
+| [Diagnosing Bugs](https://github.com/mattpocock/skills/tree/v1.0.1/skills/engineering/diagnosing-bugs) | Skill | 遇到具体 bug、回归、flaky failure 或原因不明的性能问题；也可显式要求 `$diagnosing-bugs`。 | 用紧反馈循环建立复现、区分事实和假设、逐步缩小根因，不把普通实现任务误当调试流程。 |
+| [TDD](https://github.com/mattpocock/skills/tree/v1.0.1/skills/engineering/tdd) | Skill | 用户要求 test-first、先写回归测试再修 bug，或显式要求 `$tdd`。 | 通过 red-green-refactor 和面向行为的测试推进改动，优先经公开接口验证行为。 |
+| [Codebase Design](https://github.com/mattpocock/skills/tree/v1.0.1/skills/engineering/codebase-design) | Skill | 设计或调整模块边界、接口深度、seam、adapter、可测试性时；也可显式要求 `$codebase-design`。 | 提供深模块、接口、seam、locality 等架构词汇，用于评估模块边界是否值得调整。 |
+| [Grilling](https://github.com/mattpocock/skills/tree/v1.0.1/skills/productivity/grilling) | Skill | 用户明确要求 grill、interrogate、stress-test plan，或显式要求 `$grilling`。 | 在实现前逐问 stress-test 计划或设计，帮助暴露隐含假设和弱论证。 |
+
+### 扩展自己的 Codex 能力
+
+普通用户没有 root 权限也可以扩展自己的 Codex 能力。OpenAI 官方文档对 [AGENTS.md](https://developers.openai.com/codex/guides/agents-md)、[skills](https://developers.openai.com/codex/skills)、[MCP](https://developers.openai.com/codex/mcp) 和 [`config.toml`](https://developers.openai.com/codex/config-basic) 有更完整说明；在 `116` 上要区分个人配置和全员共享配置：
+
+- 项目级指令：在自己的项目仓库放置 `AGENTS.md`。Codex 进入该项目时会读取它，适合记录项目约定、测试命令、代码风格和部署边界。
+- 个人 skill：把 skill 放到 `~/.agents/skills/<skill-name>/SKILL.md`，或在 Codex 中使用系统自带的 `$skill-installer` 从 GitHub 安装。之后可通过 `$skill-name` 显式触发；description 写得足够明确时，Codex 也可能按任务自动触发。
+- 个人 MCP：用 `codex mcp` 添加，或在 `~/.codex/config.toml` 里新增自己的 `[mcp_servers.<name>]`。命令可以指向用户 home、项目目录或用户可执行的 Nix profile。不要覆盖系统管理的 `github`、`context7` 和 `github@openai-curated` 配置；下一次 Home Manager activation 会继续维护这些 managed keys。
+- 全员共享能力：如果某个 skill、MCP 或全局指令应该给所有 headless dev 用户使用，应提交 PR 修改 upstream/downstream 声明式配置，再由运维用户 rebuild。
+
 ## 用户和权限
 
 - `ysun` 是当前运维用户，负责 secrets、重装、系统 rebuild 和生产服务重启。
@@ -87,12 +117,6 @@ nu ./scripts/install-116.nu root@192.168.0.116 --proxy http://<lan-proxy>:<port>
 
 5. 在 `https://label.bigdick.live:2053` 登录 Label Studio 并轮换初始密码。
 6. 克隆本仓库到 `/home/ysun/github.com/sctmes/dotfiles`。
-
-## headless 开发环境
-
-所有 headless dev 用户都继承 upstream 的 headless 开发工具集，包括 `gh`、Codex、Context7 MCP、Playwright skill、stop-slop skill、Ponytail skills、Nushell、Helix、Yazi、ripgrep 等。
-
-每个用户的 Codex memory 和 trusted project 都使用自己的 home 目录，不共享 `ysun` 的运行状态。
 
 ## GitHub 认证
 
