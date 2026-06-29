@@ -10,15 +10,20 @@ let
   githubMcpTokenUsers = [
     username
   ];
+  context7ApiKeyUsers = [
+    username
+  ];
 
   githubMcpTokenSecretName = user: "github-mcp-token-${user}";
   githubMcpTokenLegacySopsFiles = {
     ysun = ../../secrets/hosts/116.yaml;
   };
-  githubMcpTokenSopsFile = user:
-    githubMcpTokenLegacySopsFiles.${user} or (
-      ../../secrets/hosts/116 + "/${githubMcpTokenSecretName user}.yaml"
-    );
+  githubMcpTokenSopsFile =
+    user:
+    githubMcpTokenLegacySopsFiles.${user}
+      or (../../secrets/hosts/116 + "/${githubMcpTokenSecretName user}.yaml");
+  context7ApiKeySecretName = user: "context7-api-key-${user}";
+  context7ApiKeySopsFile = user: ../../secrets/hosts/116 + "/${context7ApiKeySecretName user}.yaml";
 
   githubMcpTokenSecrets = lib.listToAttrs (
     map (user: {
@@ -30,13 +35,29 @@ let
       };
     }) githubMcpTokenUsers
   );
+  context7ApiKeySecrets = lib.listToAttrs (
+    map (user: {
+      name = context7ApiKeySecretName user;
+      value = {
+        sopsFile = context7ApiKeySopsFile user;
+        key = "context7-api-key";
+        owner = user;
+        mode = "0400";
+      };
+    }) context7ApiKeyUsers
+  );
 
   githubMcpTokenHomeUsers = lib.listToAttrs (
     map (user: {
       name = user;
-      value.dotfiles.codex.githubTokenFile =
-        config.sops.secrets.${githubMcpTokenSecretName user}.path;
+      value.dotfiles.codex.githubTokenFile = config.sops.secrets.${githubMcpTokenSecretName user}.path;
     }) githubMcpTokenUsers
+  );
+  context7ApiKeyHomeUsers = lib.listToAttrs (
+    map (user: {
+      name = user;
+      value.dotfiles.codex.context7ApiKeyFile = config.sops.secrets.${context7ApiKeySecretName user}.path;
+    }) context7ApiKeyUsers
   );
 in
 {
@@ -74,8 +95,9 @@ in
       path = "/home/${username}/.ssh/id_ed25519_github";
     };
   }
-  // githubMcpTokenSecrets;
-  home-manager.users = githubMcpTokenHomeUsers;
+  // githubMcpTokenSecrets
+  // context7ApiKeySecrets;
+  home-manager.users = lib.recursiveUpdate githubMcpTokenHomeUsers context7ApiKeyHomeUsers;
   services.openssh.settings = {
     PasswordAuthentication = true;
     KbdInteractiveAuthentication = false;

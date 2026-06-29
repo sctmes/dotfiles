@@ -8,10 +8,10 @@
 
 | 名称 | 类型 | 触发条件 | 功能 |
 | --- | --- | --- | --- |
-| [全局 `AGENTS.md`](https://github.com/bioinformatist/dotfiles/blob/main/home/programs/codex/default.nix) | 全局指令 | Codex 启动后自动读取生成的 `~/.codex/AGENTS.md`。 | 提供全局编码约束：先澄清假设、优先简单方案、做 surgical changes、按目标验证、按 Conventional Commits 写提交信息，并追加已启用 skill 的全局触发说明。 |
+| [全局 `AGENTS.md`](https://github.com/bioinformatist/dotfiles/blob/main/home/programs/codex/default.nix) | 全局指令 | Codex 启动后自动读取生成的 `~/.codex/AGENTS.md`。 | 提供小而稳定的全局编码约束：先澄清假设、优先简单方案、做 surgical changes、按目标验证、按 Conventional Commits 写提交信息，并记录少量跨仓库 capability routing。 |
 | [GitHub MCP](https://github.com/github/github-mcp-server) | MCP | Codex 注册 `github` MCP；处理 GitHub repo、issue、PR、review、CI 相关任务时调用。 | 通过用户自己的 GitHub token 访问 GitHub context、issues、pull requests、repos、users 和 orgs。token 配置见下方“GitHub 认证”。 |
 | [GitHub curated plugin](https://github.com/bioinformatist/dotfiles/blob/main/home/programs/codex/default.nix) | Skill plugin | Codex 启用 `github@openai-curated`；处理 GitHub issue、PR、review、CI 或发布本地改动时可能触发。 | 在 GitHub MCP 之上提供更高层工作流 skills，例如处理 PR review comments、修复 GitHub Actions CI、梳理 repo/issue/PR 上下文和发布本地修改。 |
-| [Context7 MCP](https://github.com/upstash/context7) | MCP | Codex 注册 `context7` MCP；涉及库、框架、SDK、API、CLI 或云服务当前文档时使用。 | 拉取较新的项目文档，减少依赖过期 API 记忆写代码或排错的风险。 |
+| [Context7 MCP](https://github.com/upstash/context7) | MCP | Codex 注册匿名 `context7` MCP；涉及库、框架、SDK、API、CLI 或云服务当前文档时使用。 | 默认先用匿名 Context7 拉取较新的项目文档；登记了个人 API key 的用户还会得到 `context7_auth` fallback，匿名额度不可用时再使用自己的认证额度。 |
 | [Playwright CLI skill](https://github.com/microsoft/playwright-cli/tree/v0.1.14/skills/playwright-cli) | Skill | 浏览器自动化、页面预览、截图、交互验证或 Playwright 相关任务；也可显式要求 `$playwright-cli`。 | 用 Playwright 驱动浏览器，验证 headless web UI、页面状态、截图和交互行为。 |
 | [stop-slop](https://github.com/hardikpandya/stop-slop/tree/8da1f030185bdfe8471220585162991eaeb970e9) | Skill | 英文 PR、issue、release notes、README/docs、公评文本等 publishable prose 的最终润色；也可显式要求 `$stop-slop`。 | 在不改技术事实、命令、日志、标识符和有用不确定性的前提下，去掉公式化 AI 文风。 |
 | [Ponytail](https://github.com/DietrichGebert/ponytail/tree/v4.8.3) | Skill | 用户明确要求 Ponytail、YAGNI、最小可行实现、stdlib/native-first 或最简单方案时，用 `$ponytail`。 | 作为一次性最小实现约束，压低抽象和依赖成本，但不移除安全、验证、无障碍和明确要求的行为。 |
@@ -150,3 +150,32 @@ gh auth login
 保存后文件应是 SOPS 加密内容。不要把 token 加进共享 `secrets/hosts/116.yaml`，也不要提交明文 token。
 
 审查这类 PR 时只看：用户名、文件名、SOPS 加密是否正确，以及 token 是否只路由给同一个 Unix 用户。
+
+## Context7 认证
+
+所有 headless dev 用户默认都可以使用匿名 `context7` MCP。登记了个人 Context7 API key 的用户会额外得到自己的 `context7_auth` MCP server；匿名额度不可用时，再改用这个认证 server。当前这是两套 server 的手动/agent 层 fallback，不是同一个 server 自动捕获 429 后透明重试。`ysun` 已登记自己的 encrypted SOPS 文件；其他用户不要共享这个 key。
+
+如果需要 Codex Context7 MCP 也稳定使用个人 API key，请按 GitHub MCP token 的同类规则提交 PR：
+
+1. 在 `hosts/116/default.nix` 的 `context7ApiKeyUsers` 中加入用户名。
+2. 新增 per-user SOPS 文件：
+
+   ```text
+   secrets/hosts/116/context7-api-key-<user>.yaml
+   ```
+
+3. 用 SOPS 创建文件：
+
+   ```nu
+   sops secrets/hosts/116/context7-api-key-<user>.yaml
+   ```
+
+4. 明文编辑时只写：
+
+   ```yaml
+   context7-api-key: <Context7 API key>
+   ```
+
+保存后文件应是 SOPS 加密内容。不要把 Context7 API key 加进共享 `secrets/hosts/116.yaml`，也不要提交明文 key。
+
+审查这类 PR 时只看：用户名、文件名、SOPS 加密是否正确，以及 API key 是否只路由给同一个 Unix 用户。
