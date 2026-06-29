@@ -9,9 +9,11 @@
 let
   githubMcpTokenUsers = [
     username
+    "zky"
   ];
   context7ApiKeyUsers = [
     username
+    "zky"
   ];
 
   githubMcpTokenSecretName = user: "github-mcp-token-${user}";
