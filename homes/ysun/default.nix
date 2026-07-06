@@ -1,6 +1,7 @@
 {
   inputs,
   lib,
+  pkgs,
   ...
 }:
 {
@@ -12,7 +13,19 @@
     "/home/ysun/github.com/sctmes/dotfiles"
   ];
 
-  programs.nushell.loginFile.text = lib.mkForce "";
+  programs.nushell = {
+    loginFile.text = lib.mkForce "";
+    configFile.text = lib.mkAfter ''
+      def maint-update-yzn [] {
+        print "Updating Yazelix Next..."
+        dotfiles-maint-update "yzn"
+      }
+    '';
+  };
+
+  home.packages = [
+    inputs.yazelix-next.packages.${pkgs.stdenv.hostPlatform.system}.yzn
+  ];
 
   dotfiles.maint = {
     enable = true;
@@ -25,6 +38,9 @@
       "containerd"
     ];
     updateGroups = {
+      yzn = [
+        "yazelix-next"
+      ];
       tools = [
         "upstream"
       ];

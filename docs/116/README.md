@@ -57,6 +57,21 @@ maint-switch
 
 `maint-switch` 只应用当前仓库状态，不会自动更新 flake inputs。需要更新依赖时先开 PR，由 `ysun` 确认后再 rebuild。
 
+### Yazelix Next
+
+`116` 只为 `ysun` 安装实验中的 Yazelix Next，入口命令是 `yzn`。上游通用 dotfiles 不安装 Yazelix；等 `yzn` 更稳定后，再决定是否提升为所有机器的声明式配置。
+
+更新 `yzn` 时只更新对应 flake input：
+
+```nu
+maint-update-yzn
+git diff flake.lock
+maint-check
+maint-switch
+```
+
+`yzn` 目前仍可能触发本地 Rust 构建；如果 `maint-check` 显示你暂时不想接受的 `will be built`，就停在这一步。回滚时回退 `flake.lock` 中的 `yazelix-next` 变更，再执行同样的检查和切换流程。`yazelix-next` 目前是私有仓库，执行更新的用户需要有对应 GitHub SSH 读取权限。
+
 ## 主要服务
 
 - Mihomo: `mihomo-compose.service`

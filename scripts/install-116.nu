@@ -5,8 +5,8 @@ def main [
   --extra-dir: string = "/tmp/sctmes-116-extra",
   --proxy: string,
   --substituters: string = "https://mirrors.ustc.edu.cn/nix-channels/store https://cache.nixos.org",
-  --extra-substituters: string = "https://yazelix.cachix.org",
-  --extra-trusted-public-keys: string = "yazelix.cachix.org-1:ZgxIjQvaP0VTWL8Racx27mpUNzDJ97xC2y7QWYjmGNM=",
+  --extra-substituters: string = "",
+  --extra-trusted-public-keys: string = "",
   --phases: string = "kexec,disko,install,reboot",
 ] {
   if ($proxy | is-empty) {
