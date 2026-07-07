@@ -127,7 +127,6 @@ in
 
   environment.sessionVariables = {
     NPM_CONFIG_REGISTRY = "https://registry.npmmirror.com";
-    NPM_CONFIG_DISTURL = "https://npmmirror.com/mirrors/node";
   };
 
   fileSystems."/persist".neededForBoot = true;
