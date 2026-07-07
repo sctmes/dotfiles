@@ -45,17 +45,21 @@ in
     };
   };
 
-  programs.ssh = {
-    enable = true;
-    enableDefaultConfig = false;
-    settings."github.com" = {
-      HostName = "github.com";
-      User = "git";
-      Port = 22;
-      IdentityFile = "~/.ssh/id_ed25519_github";
-      IdentitiesOnly = true;
-    };
-  };
+  # OpenSSH rejects this machine's Nix-store-backed symlinked user config
+  # because store paths are owned by nobody here, so write a real 0600 file.
+  home.activation.sshConfig = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+    mkdir -p "$HOME/.ssh"
+    chmod 700 "$HOME/.ssh"
+    rm -f "$HOME/.ssh/config"
+    install -m 600 /dev/stdin "$HOME/.ssh/config" <<'EOF'
+  Host github.com
+    HostName github.com
+    User git
+    Port 22
+    IdentityFile ~/.ssh/id_ed25519_github
+    IdentitiesOnly yes
+  EOF
+  '';
 
   home.file.".ssh/id_ed25519_github.pub".text =
     "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPRzq7CIHxYsrrUIW5TFFdea1MbYfkWZx6fQQM6ZBiAd ysun@116-github\n";
