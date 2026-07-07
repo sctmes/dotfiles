@@ -122,7 +122,7 @@ in
     nodejs_24
     gnumake
     gcc
-    python3
+    python3Minimal
   ];
 
   environment.sessionVariables = {
