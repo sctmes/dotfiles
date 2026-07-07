@@ -41,6 +41,19 @@ git commit -m "chore: update upstream dotfiles"
 maint-switch --no-pull
 ```
 
+本仓库的 `scripts/maint/policy.json` 显式转发 upstream 的维护门控策略，供
+`maint-switch --repo /home/ysun/github.com/sctmes/dotfiles` 在新系统激活前读取。
+更新 upstream 时，如果 upstream 的 `scripts/maint/policy.json` 变了，也要同步更新
+本仓库的转发文件。
+
+如果 `maint-switch` 因轻量生成式 glue derivation 被拦住，先修 upstream policy，
+再更新本仓库的 `upstream` input 和 `scripts/maint/policy.json`；不要直接绕过 gate，
+也不要把 kernel、driver、Hyprland、GCC/Rust toolchain、Chromium/Electron 等重组件
+加入 allowlist。
+
+网络问题需要按路径拆分：Nix cache、GitHub release/direct fetch、npm registry 或
+node-gyp、Cargo registry 和运行时代理不是同一个问题。
+
 更新 `yazelix-next` 时也走显式手动流程：
 
 ```nu

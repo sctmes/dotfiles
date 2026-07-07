@@ -66,6 +66,7 @@ in
   imports = [
     ./disko-config.nix
     ./docker.nix
+    ./orca-remote.nix
     ./proxy.nix
     ./storage-data1.nix
     ./services.nix
@@ -117,12 +118,6 @@ in
     mdadm
     git
     ghostty.terminfo
-
-    # Orca SSH relay needs Node.js plus node-gyp native build tools on the remote host.
-    nodejs_24
-    gnumake
-    gcc
-    python3Minimal
   ];
 
   environment.sessionVariables = {
