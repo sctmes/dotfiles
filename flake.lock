@@ -828,11 +828,11 @@
         "systems": "systems_3"
       },
       "locked": {
-        "lastModified": 1783182735,
-        "narHash": "sha256-YWxMbfP0NTAXdnRUKZwLhAgy/WVVI2UMR7VnHG4GDkI=",
+        "lastModified": 1783352348,
+        "narHash": "sha256-K/10r1jsHqyzH9SXxjh/SeCaF+soattIxU5oppd+mE8=",
         "owner": "luccahuguet",
         "repo": "mars",
-        "rev": "47b1a2a0d86851ba9ee0247b31186dc8f93633f0",
+        "rev": "e82e3a4c55add4189105ebcdb4512b729199143e",
         "type": "github"
       },
       "original": {
@@ -1473,11 +1473,11 @@
         "yazelixZellijPopup": "yazelixZellijPopup"
       },
       "locked": {
-        "lastModified": 1783196517,
-        "narHash": "sha256-HoCHzgcFp2w4ijPE6CUxS0e6A96OQz/oPHzEbJ3BqAA=",
+        "lastModified": 1783396940,
+        "narHash": "sha256-AzcsjcmXLfZECz4aGCGqJdsZe5/7m0QsnSKOyYWpf+g=",
         "ref": "refs/heads/main",
-        "rev": "23537bb5e0518a94731f957c0d2569e94ca53b09",
-        "revCount": 126,
+        "rev": "7ed84e4da61aab92660670228ac59bf4075d40cc",
+        "revCount": 147,
         "type": "git",
         "url": "ssh://git@github.com/luccahuguet/yazelix-next.git"
       },
@@ -1495,11 +1495,11 @@
         "rust-overlay": "rust-overlay_3"
       },
       "locked": {
-        "lastModified": 1781906528,
-        "narHash": "sha256-8sDX6JmdZfy+S36YjPOMBtLrcrgSt3V0hZHmG4aBXQg=",
+        "lastModified": 1783386463,
+        "narHash": "sha256-PoXQh1K7Tfx2v70nHn/gA6psKmCVOiZ1/4LZ/Hq9Nvo=",
         "owner": "luccahuguet",
         "repo": "yazelix-helix",
-        "rev": "c85dda9badf30c73c564aa4a284511ce33849cbd",
+        "rev": "19b9ac4d75a7389ff2428dcb84524e41d86fc2ad",
         "type": "github"
       },
       "original": {
