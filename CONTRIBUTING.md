@@ -15,6 +15,44 @@
 
 已有主机的日常维护、rebuild 和重装说明见对应主机文档；当前可参考 [docs/116/README.md](./docs/116/README.md)。
 
+## 维护和版本来源
+
+日常维护入口只有一个：
+
+```nu
+maint-switch
+```
+
+`maint-switch` 消费当前仓库已经提交的状态，执行网络门控、构建和系统切换。它不负责更新 flake inputs；依赖更新本身也应按贡献流程提交和审查。
+
+版本来源是混合的：
+
+- upstream-owned 工具、Codex release pin、Codex skills/MCP、headless 开发工具声明和维护门控策略来自 `bioinformatist/dotfiles`。这些更新先进入 upstream，再通过更新本仓库的 `upstream` flake input 被 `116` 消费。
+- `116` 的基础 `nixpkgs`、`home-manager`、`sops-nix`、`disko`、`impermanence` 和 downstream 服务配置由本仓库自己的 flake lock 管理。
+- `yazelix-next` 是 `116` 上 `ysun` 的实验性私有工具，不属于 upstream 通用配置，也不作为 `maint-*` 日常入口。
+
+更新 upstream 时只更新对应 flake input：
+
+```nu
+nix flake update upstream
+git diff flake.lock
+git add flake.lock
+git commit -m "chore: update upstream dotfiles"
+maint-switch --no-pull
+```
+
+更新 `yazelix-next` 时也走显式手动流程：
+
+```nu
+nix flake update yazelix-next
+git diff flake.lock
+git add flake.lock
+git commit -m "chore: update yazelix next"
+maint-switch --no-pull
+```
+
+如果 dry-run 显示会触发暂时不想接受的本地构建，停止在提交前或回退对应 `flake.lock` 变更。`yazelix-next` 目前是私有仓库，执行更新的用户需要有对应 GitHub SSH 读取权限。
+
 ## 责任边界
 
 - 运维用户负责 secret 管理、重装、系统 rebuild 和生产服务重启。

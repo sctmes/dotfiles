@@ -4,6 +4,11 @@
   pkgs,
   ...
 }:
+let
+  upstreamMaintPolicy = builtins.fromJSON (
+    builtins.readFile "${inputs.upstream}/scripts/maint/policy.json"
+  );
+in
 {
   imports = [
     inputs.upstream.homeManagerModules.devHeadless
@@ -15,12 +20,6 @@
 
   programs.nushell = {
     loginFile.text = lib.mkForce "";
-    configFile.text = lib.mkAfter ''
-      def maint-update-yzn [] {
-        print "Updating Yazelix Next..."
-        dotfiles-maint-update "yzn"
-      }
-    '';
   };
 
   home.packages = [
@@ -31,29 +30,10 @@
     enable = true;
     repo = "/home/ysun/github.com/sctmes/dotfiles";
     host = "116";
-    riskMarkers = [
-      "nvidia-x11"
-      "linux-"
+    riskMarkers = upstreamMaintPolicy.riskMarkers ++ [
       "docker"
       "containerd"
     ];
-    updateGroups = {
-      yzn = [
-        "yazelix-next"
-      ];
-      tools = [
-        "upstream"
-      ];
-      infra = [
-        "sops-nix"
-        "impermanence"
-        "disko"
-      ];
-      base = [
-        "nixpkgs"
-        "home-manager"
-      ];
-    };
   };
 
   programs.git = {
