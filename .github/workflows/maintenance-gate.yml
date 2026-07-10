@@ -1,0 +1,51 @@
+name: Maintenance Gate
+
+on:
+  pull_request:
+    branches:
+      - main
+    types:
+      - opened
+      - synchronize
+      - reopened
+      - ready_for_review
+  merge_group:
+    types:
+      - checks_requested
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  gate:
+    name: maintenance gate
+    runs-on: ubuntu-latest
+    env:
+      CHINA_SUBSTITUTERS: >-
+        https://mirrors.ustc.edu.cn/nix-channels/store
+        https://anyrun.cachix.org
+        https://hyprland.cachix.org
+      CHINA_EXTRA_TRUSTED_PUBLIC_KEYS: >-
+        anyrun.cachix.org-1:pqBobmOjI7nKlsUMV25u9QHa9btJK65/C8vnO3p346s=
+        hyprland.cachix.org-1:a7pgxzMz7+chwVL3/pzj6jIBMioiJM7ypFP8PwtkuGc=
+      NIXPKGS_ALLOW_UNFREE: "1"
+
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - uses: cachix/install-nix-action@v31
+
+      - name: Validate Renovate config
+        shell: bash
+        run: jq -e . renovate.json >/dev/null
+
+      - name: Check flake metadata
+        shell: bash
+        run: nix flake metadata --json --no-write-lock-file >/dev/null
+
+      - name: Check 116 cache gate
+        shell: bash
+        run: bash scripts/maint/ci-cache-gate.sh

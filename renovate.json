@@ -1,0 +1,45 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended"],
+  "enabledManagers": ["nix"],
+  "timezone": "UTC",
+  "prConcurrentLimit": 0,
+  "prHourlyLimit": 0,
+  "dependencyDashboard": true,
+  "lockFileMaintenance": {
+    "enabled": false
+  },
+  "nix": {
+    "enabled": true,
+    "managerFilePatterns": ["/^flake\\.nix$/"]
+  },
+  "labels": ["maintenance"],
+  "packageRules": [
+    {
+      "description": "Keep 116's reusable upstream base current without moving downstream-owned inputs.",
+      "matchManagers": ["nix"],
+      "matchDepNames": ["upstream"],
+      "schedule": ["* */4 * * *"],
+      "automerge": true,
+      "automergeType": "pr",
+      "semanticCommits": "enabled",
+      "semanticCommitType": "chore",
+      "semanticCommitScope": "maint",
+      "commitMessageTopic": "upstream dotfiles",
+      "addLabels": ["policy-upstream"]
+    },
+    {
+      "description": "Keep host-local and private inputs manual.",
+      "matchManagers": ["nix"],
+      "matchDepNames": [
+        "disko",
+        "home-manager",
+        "impermanence",
+        "nixpkgs",
+        "sops-nix",
+        "yazelix-next"
+      ],
+      "enabled": false
+    }
+  ]
+}

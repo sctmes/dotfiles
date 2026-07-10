@@ -31,6 +31,12 @@ maint-switch
 - `116` 的基础 `nixpkgs`、`home-manager`、`sops-nix`、`disko`、`impermanence` 和 downstream 服务配置由本仓库自己的 flake lock 管理。
 - `yazelix-next` 是 `116` 上 `ysun` 的实验性私有工具，不属于 upstream 通用配置，也不作为 `maint-*` 日常入口。
 
+`upstream` input 由 Renovate 每 4 小时检查一次并提交 PR。这个自动化只移动
+`upstream`，不更新 downstream-owned inputs，也不更新私有 `yazelix-next`。GitHub
+Actions 会用临时 `yazelix-next` stub 跑 `116` cache gate，避免 CI 需要读取 Lucca
+私有仓库；gate 比较 PR 和 `main`，只拦新增的未批准本地构建。真正的构建和切换仍由
+运维用户在目标机器上执行 `maint-switch`。
+
 更新 upstream 时只更新对应 flake input：
 
 ```nu
