@@ -82,20 +82,21 @@ let
         -no_monitor=1
     '';
   };
-  serviceUnit = pkgs.writeText "futu-opend.service" ''
-    [Unit]
-    Description=Futu OpenD command line gateway
-    After=network-online.target
-
-    [Service]
-    ExecStart=${launcher}/bin/futu-opend-service
-    Restart=on-failure
-    RestartPreventExitStatus=78
-    RestartSec=10
-  '';
 in
 {
   home.packages = [ futuOpend ];
 
-  home.file.".config/systemd/user/futu-opend.service".source = serviceUnit;
+  systemd.user.services.futu-opend = {
+    Unit = {
+      Description = "Futu OpenD command line gateway";
+      After = [ "network-online.target" ];
+    };
+    Service = {
+      ExecStart = "${launcher}/bin/futu-opend-service";
+      Restart = "on-failure";
+      RestartPreventExitStatus = "78";
+      RestartSec = "10";
+    };
+    Install.WantedBy = [ "default.target" ];
+  };
 }
