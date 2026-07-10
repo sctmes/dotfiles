@@ -8,13 +8,12 @@
 
 | 名称 | 类型 | 触发条件 | 功能 |
 | --- | --- | --- | --- |
-| [全局 `AGENTS.md`](https://github.com/bioinformatist/dotfiles/blob/main/home/programs/codex/default.nix) | 全局指令 | Codex 启动后自动读取生成的 `~/.codex/AGENTS.md`。 | 提供小而稳定的全局编码约束：先澄清假设、优先简单方案、做 surgical changes、按目标验证、按 Conventional Commits 写提交信息，并记录少量跨仓库 capability routing。 |
+| [全局 `AGENTS.md`](https://github.com/bioinformatist/dotfiles/blob/main/home/programs/codex/default.nix) | 全局指令 | Codex 启动后自动读取生成的 `~/.codex/AGENTS.md`。 | 补充跨仓库工作偏好：采用最小但完整的改动、让建议和术语解释具备充分上下文、遵循 Git/Nix 约定，并执行 Context7 fallback 与 per-user secret routing 等通用 capability routing。 |
 | [GitHub MCP](https://github.com/github/github-mcp-server) | MCP | Codex 注册 `github` MCP；处理 GitHub repo、issue、PR、review、CI 相关任务时调用。 | 通过用户自己的 GitHub token 访问 GitHub context、issues、pull requests、repos、users 和 orgs。token 配置见下方“GitHub 认证”。 |
 | [GitHub curated plugin](https://github.com/bioinformatist/dotfiles/blob/main/home/programs/codex/default.nix) | Skill plugin | Codex 启用 `github@openai-curated`；处理 GitHub issue、PR、review、CI 或发布本地改动时可能触发。 | 在 GitHub MCP 之上提供更高层工作流 skills，例如处理 PR review comments、修复 GitHub Actions CI、梳理 repo/issue/PR 上下文和发布本地修改。 |
 | [Context7 MCP](https://github.com/upstash/context7) | MCP | Codex 注册匿名 `context7` MCP；涉及库、框架、SDK、API、CLI 或云服务当前文档时使用。 | 默认先用匿名 Context7 拉取较新的项目文档；登记了个人 API key 的用户还会得到 `context7_auth` fallback，匿名额度不可用时再使用自己的认证额度。 |
 | [Playwright CLI skill](https://github.com/microsoft/playwright-cli/tree/v0.1.14/skills/playwright-cli) | Skill | 浏览器自动化、页面预览、截图、交互验证或 Playwright 相关任务；也可显式要求 `$playwright-cli`。 | 用 Playwright 驱动浏览器，验证 headless web UI、页面状态、截图和交互行为。 |
 | [stop-slop](https://github.com/hardikpandya/stop-slop/tree/8da1f030185bdfe8471220585162991eaeb970e9) | Skill | 英文 PR、issue、release notes、README/docs、公评文本等 publishable prose 的最终润色；也可显式要求 `$stop-slop`。 | 在不改技术事实、命令、日志、标识符和有用不确定性的前提下，去掉公式化 AI 文风。 |
-| [Ponytail](https://github.com/DietrichGebert/ponytail/tree/v4.8.3) | Skill | 用户明确要求 Ponytail、YAGNI、最小可行实现、stdlib/native-first 或最简单方案时，用 `$ponytail`。 | 作为一次性最小实现约束，压低抽象和依赖成本，但不移除安全、验证、无障碍和明确要求的行为。 |
 | [Ponytail Review](https://github.com/DietrichGebert/ponytail/tree/v4.8.3/skills/ponytail-review) | Skill | 用户明确要求 over-engineering review、simplify review、what can we delete，或显式 `$ponytail-review`。 | 只审复杂度：指出可删除的 speculative abstraction、重复造轮子、无用依赖和死弹性。 |
 | [Ponytail Audit](https://github.com/DietrichGebert/ponytail/tree/v4.8.3/skills/ponytail-audit) | Skill | 用户明确要求全仓库 over-engineering audit、find bloat、what can I delete，或显式 `$ponytail-audit`。 | 对整个 repo 做复杂度审计，输出按优先级排序的删除、简化和 stdlib/native 替代建议。 |
 | [Ponytail Debt](https://github.com/DietrichGebert/ponytail/tree/v4.8.3/skills/ponytail-debt) | Skill | 用户明确要求 ponytail debt、列出 `ponytail:` 注释，或显式 `$ponytail-debt`。 | 汇总代码中有意留下的 `ponytail:` 延后事项，避免临时取舍失去上下文。 |
