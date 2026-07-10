@@ -83,6 +83,8 @@ in
   programs.nix-ld.enable = true;
   programs.nano.enable = false;
 
+  nixpkgs.config.allowUnfreePredicate = pkg: builtins.elem (lib.getName pkg) [ "futu-opend" ];
+
   boot.loader.systemd-boot.enable = true;
   boot.loader.efi.canTouchEfiVariables = true;
   boot.swraid.enable = true;
@@ -96,6 +98,16 @@ in
     "${username}-github-ssh-key" = {
       owner = username;
       path = "/home/${username}/.ssh/id_ed25519_github";
+    };
+    "futu-opend-login-account" = {
+      key = "futu-opend-login-account";
+      owner = username;
+      mode = "0400";
+    };
+    "futu-opend-login-password" = {
+      key = "futu-opend-login-password";
+      owner = username;
+      mode = "0400";
     };
   }
   // githubMcpTokenSecrets

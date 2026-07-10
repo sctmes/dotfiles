@@ -12,6 +12,7 @@ in
 {
   imports = [
     inputs.upstream.homeManagerModules.devHeadless
+    ./futu-opend.nix
   ];
 
   dotfiles.codex.trustedProjects = [
