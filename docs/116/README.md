@@ -91,8 +91,6 @@ worktree 是同一个 Git 仓库的独立工作目录。executor 在这里工作
 
 `codex-improve-exec` 是工作流内部使用的 helper：它负责创建临时 branch/worktree，并启动普通或 deep executor。普通用户通常只需要在对话中使用 `$improve execute <计划文件>`，不必直接运行这个 helper。
 
-本机安装的是针对 Codex 调整后的版本；表格中的链接指向原始 `shadcn/improve` skill。共享 skill、profiles 和 helper 均由 Nix/Home Manager 管理，不要在 `116` 上手工复制或修改生成文件。
-
 ## 用户和权限
 
 - `ysun` 是当前运维用户，负责 secrets、重装、系统 rebuild 和生产服务重启。
