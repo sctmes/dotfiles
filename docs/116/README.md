@@ -12,6 +12,7 @@
 | [GitHub MCP](https://github.com/github/github-mcp-server) | MCP | Codex 注册 `github` MCP；处理 GitHub repo、issue、PR、review、CI 相关任务时调用。 | 通过用户自己的 GitHub token 访问 GitHub context、issues、pull requests、repos、users 和 orgs。token 配置见下方“GitHub 认证”。 |
 | [GitHub curated plugin](https://github.com/bioinformatist/dotfiles/blob/main/home/programs/codex/default.nix) | Skill plugin | Codex 启用 `github@openai-curated`；处理 GitHub issue、PR、review、CI 或发布本地改动时可能触发。 | 在 GitHub MCP 之上提供更高层工作流 skills，例如处理 PR review comments、修复 GitHub Actions CI、梳理 repo/issue/PR 上下文和发布本地修改。 |
 | [Context7 MCP](https://github.com/upstash/context7) | MCP | Codex 注册匿名 `context7` MCP；涉及库、框架、SDK、API、CLI 或云服务当前文档时使用。 | 默认先用匿名 Context7 拉取较新的项目文档；登记了个人 API key 的用户还会得到 `context7_auth` fallback，匿名额度不可用时再使用自己的认证额度。 |
+| [`improve`](https://github.com/bioinformatist/dotfiles/tree/main/home/programs/codex/improve) | Skill + executor | 代码库审查、改进计划、计划复核，或显式要求 `$improve`；执行计划时运行 `codex-improve-exec`。 | advisor 只读审查并写计划；executor 以当前 `HEAD` 为基线，在独立 worktree 中留下未提交 diff 供主 agent 复核。普通 executor 使用 `gpt-5.6-sol` + `medium`，`--deep` 使用同一模型 + `xhigh`；不会改变当前 Codex 会话的模型或 effort。 |
 | [Playwright CLI skill](https://github.com/microsoft/playwright-cli/tree/v0.1.14/skills/playwright-cli) | Skill | 浏览器自动化、页面预览、截图、交互验证或 Playwright 相关任务；也可显式要求 `$playwright-cli`。 | 用 Playwright 驱动浏览器，验证 headless web UI、页面状态、截图和交互行为。 |
 | [stop-slop](https://github.com/hardikpandya/stop-slop/tree/8da1f030185bdfe8471220585162991eaeb970e9) | Skill | 英文 PR、issue、release notes、README/docs、公评文本等 publishable prose 的最终润色；也可显式要求 `$stop-slop`。 | 在不改技术事实、命令、日志、标识符和有用不确定性的前提下，去掉公式化 AI 文风。 |
 | [Ponytail Review](https://github.com/DietrichGebert/ponytail/tree/v4.8.3/skills/ponytail-review) | Skill | 用户明确要求 over-engineering review、simplify review、what can we delete，或显式 `$ponytail-review`。 | 只审复杂度：指出可删除的 speculative abstraction、重复造轮子、无用依赖和死弹性。 |
@@ -30,6 +31,19 @@
 - 个人 skill：把 skill 放到 `~/.agents/skills/<skill-name>/SKILL.md`，或在 Codex 中使用系统自带的 `$skill-installer` 从 GitHub 安装。之后可通过 `$skill-name` 显式触发；description 写得足够明确时，Codex 也可能按任务自动触发。
 - 个人 MCP：用 `codex mcp` 添加，或在 `~/.codex/config.toml` 里新增自己的 `[mcp_servers.<name>]`。命令可以指向用户 home、项目目录或用户可执行的 Nix profile。不要覆盖系统管理的 `github`、`context7` 和 `github@openai-curated` 配置；下一次 Home Manager activation 会继续维护这些 managed keys。
 - 全员共享能力：如果某个 skill、MCP 或全局指令应该给所有 headless dev 用户使用，应提交 PR 修改 upstream/downstream 声明式配置，再由运维用户 rebuild。
+
+### Improve 的执行边界
+
+`$improve` 本身是只读 advisor：它审查仓库并在 `plans/`（或已有专用计划目录）写出自包含计划，不直接修改源代码。执行已有计划时，在仓库内运行：
+
+```nu
+codex-improve-exec plans/NNN-slug.md
+codex-improve-exec --deep plans/NNN-slug.md
+```
+
+命令会从当前 `HEAD` 创建临时 `codex/improve-*` 分支和 worktree；当前主 checkout 的未提交改动不会自动带入。executor 只能处理计划列出的范围，必须执行验证，并且不会提交、合并、推送、创建 PR、删除 worktree 或再派生 agent。命令返回的 `IMPROVE_WORKTREE` 路径是复核入口：主 agent 需要在该目录重跑完成条件、查看状态和完整 diff，再决定接受、要求修订或阻断。用户决定结果后才能清理 worktree。
+
+这个工作流不会让正在运行的 Codex 会话动态换模型或 effort。模型和 reasoning effort 只在 `codex-improve-exec` 启动的独立 profile 中生效；`--deep` 只是选择更高 effort 的 executor profile。所有用户共享的安装、profile 和 helper 都由 upstream/downstream 声明式配置管理，不要在 `116` 上手工复制 skill 或 profile 文件。
 
 ## 用户和权限
 
