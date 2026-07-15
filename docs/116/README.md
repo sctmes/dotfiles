@@ -12,7 +12,7 @@
 | [GitHub MCP](https://github.com/github/github-mcp-server) | MCP | Codex 注册 `github` MCP；处理 GitHub repo、issue、PR、review、CI 相关任务时调用。 | 通过用户自己的 GitHub token 访问 GitHub context、issues、pull requests、repos、users 和 orgs。token 配置见下方“GitHub 认证”。 |
 | [GitHub curated plugin](https://github.com/openai/plugins/tree/main/plugins/github) | Skill plugin | Codex 启用 `github@openai-curated`；处理 GitHub issue、PR、review、CI 或发布本地改动时可能触发。 | 在 GitHub MCP 之上提供更高层工作流 skills，例如处理 PR review comments、修复 GitHub Actions CI、梳理 repo/issue/PR 上下文和发布本地修改。 |
 | [Context7 MCP](https://github.com/upstash/context7) | MCP | Codex 注册匿名 `context7` MCP；涉及库、框架、SDK、API、CLI 或云服务当前文档时使用。 | 默认先用匿名 Context7 拉取较新的项目文档；登记了个人 API key 的用户还会得到 `context7_auth` fallback，匿名额度不可用时再使用自己的认证额度。 |
-| [`improve`](https://github.com/shadcn/improve/tree/03369ee6d7cafbfcecc4346539b05b3dc0a603bb/skills/improve) | Skill + executor | 想系统检查一个代码库、找出值得修复的问题、制定计划并逐项实施时，在 Codex 对话中使用 `$improve`。 | 先只读审查并把选中的问题写成计划，再让独立 executor 在隔离目录中改代码，最后由当前 Codex 会话复核。适合“不知道该从哪里开始优化”或“希望先审查、确认方案，再动代码”的场景。 |
+| [`improve`](https://github.com/shadcn/improve/tree/03369ee6d7cafbfcecc4346539b05b3dc0a603bb/skills/improve) | Skill + executors/reviewers | 想系统检查一个代码库、收敛实施计划并隔离执行时，在 Codex 对话中使用 `$improve`。 | advisor 先把计划收敛为 `READY` 或 `BLOCKED`，executor 在独立 worktree 实现；行为重要或结构复杂的改动还会按条件接受 correctness 或 elegance 独立复核。完整用法见 [Improve 使用说明](codex-improve.md)。 |
 | [Playwright CLI skill](https://github.com/microsoft/playwright-cli/tree/v0.1.14/skills/playwright-cli) | Skill | 浏览器自动化、页面预览、截图、交互验证或 Playwright 相关任务；也可显式要求 `$playwright-cli`。 | 用 Playwright 驱动浏览器，验证 headless web UI、页面状态、截图和交互行为。 |
 | [stop-slop](https://github.com/hardikpandya/stop-slop/tree/8da1f030185bdfe8471220585162991eaeb970e9) | Skill | 英文 PR、issue、release notes、README/docs、公评文本等 publishable prose 的最终润色；也可显式要求 `$stop-slop`。 | 在不改技术事实、命令、日志、标识符和有用不确定性的前提下，去掉公式化 AI 文风。 |
 | [Ponytail Review](https://github.com/DietrichGebert/ponytail/tree/v4.8.3/skills/ponytail-review) | Skill | 用户明确要求 over-engineering review、simplify review、what can we delete，或显式 `$ponytail-review`。 | 只审复杂度：指出可删除的 speculative abstraction、重复造轮子、无用依赖和死弹性。 |
@@ -34,9 +34,9 @@
 
 ### 用 Improve 审查和改进代码库
 
-`improve` 适合把一次范围较大的代码改进拆成“审查、确认、计划、执行、复核”几个阶段。它不会在发现问题后立刻改代码：当前 Codex 会话先作为 advisor（顾问）阅读仓库、解释问题和影响，等用户选定要处理的事项后才写计划。
+`improve` 由 upstream 全局配置提供，并不只面向 `116`。它适合先审查和确认方向，再把完整计划交给隔离 executor 实现；普通用户不需要直接运行内部 helper。
 
-第一次使用时，先进入目标仓库并启动 Codex：
+进入目标仓库并启动 Codex：
 
 ```nu
 cd ~/github.com/<组织>/<仓库>
@@ -49,47 +49,13 @@ codex
 $improve standard 检查这个仓库，重点关注正确性、测试和长期维护成本。
 ```
 
-常用方式：
-
-| 对话写法 | 用途 |
-| --- | --- |
-| `$improve quick 检查这个仓库` | 快速查看高风险区域，适合先了解项目现状。 |
-| `$improve standard 检查这个仓库` | 审查主要模块和常见工程问题；大多数情况从这里开始。 |
-| `$improve deep 检查整个仓库` | 更完整的全仓库审查，耗时和 token 消耗更高。 |
-| `$improve security` | 只关注安全问题。也可以换成 `tests`、`perf` 等具体方向。 |
-| `$improve branch` | 只审查当前分支相对默认分支引入的变化。 |
-| `$improve plan <需求>` | 不做全仓库审查，只为一个明确需求写实施计划。 |
-| `$improve review-plan plans/NNN-name.md` | 检查并补全已有计划。 |
-| `$improve execute plans/NNN-name.md` | 在独立工作目录中执行计划，并把结果交回当前会话复核。 |
-| `$improve reconcile` | 检查已有计划哪些已完成、受阻或需要更新。 |
-
-一次完整流程通常是：
+也可以直接为明确需求写计划：
 
 ```text
-你与当前 Codex 会话讨论目标
-  -> advisor 只读审查并给出候选问题
-  -> 你选择要处理的问题
-  -> advisor 在 plans/ 中写出实施计划
-  -> executor 在独立 worktree 中修改和验证
-  -> 当前 Codex 会话检查完整 diff 和验证结果
-  -> 你决定接受、要求修改或放弃
+$improve plan <需求>
 ```
 
-worktree 是同一个 Git 仓库的独立工作目录。executor 在这里工作，不会直接改动你启动 Codex 时所在的目录。它从当前 Git 提交（`HEAD`）开始，因此主目录中尚未提交的修改不会自动带入；执行计划前应先确认需要的基础改动已经提交。executor 也不会自行提交、合并、推送或创建 PR；只有当前 Codex 会话复核完成并得到你的批准后，才会继续处理结果。
-
-#### 预定义的 Improve agents
-
-这里的 agent 实际上是预先设置好的 Codex profile：每个 profile 固定了模型、reasoning effort、读写权限和是否允许继续派生 agent。普通用户不需要手动选择，大多数情况下由 `$improve` 工作流自动调用。
-
-| Agent / profile | 模型与 effort | 权限 | 负责什么 |
-| --- | --- | --- | --- |
-| 当前 Codex 会话（advisor） | 沿用当前会话设置 | 审查阶段只读；只写 `plans/` | 理解仓库、筛选问题、与用户确认方向、写计划，并在执行后做最终验收。调用 `$improve` 不会更改当前会话的模型或 effort。 |
-| `improve-scout` | `gpt-5.6-luna` + `high` | 只读 | 在较大的审查中分区查看代码并返回候选问题。它只提供线索，advisor 还会重新核实，不会直接写计划或改代码。 |
-| `improve-executor` | `gpt-5.6-sol` + `medium` | 仅可写独立 worktree | 默认执行器。按照已确认的计划修改代码、运行测试并留下未提交 diff，适合边界清楚的大多数任务。 |
-| `improve-executor-deep` | `gpt-5.6-sol` + `xhigh` | 仅可写独立 worktree | 用于技术不确定性高、跨模块或需要更深入推理的计划。它更慢、token 消耗更高，不作为默认选择。 |
-| `improve-reviewer` | `gpt-5.6-sol` + `high` | 只读 | 对重要或存在争议的 executor 结果做独立复核，重点检查计划是否真正完成、diff 是否越界、测试是否有意义。 |
-
-`codex-improve-exec` 是工作流内部使用的 helper：它负责创建临时 branch/worktree，并启动普通或 deep executor。普通用户通常只需要在对话中使用 `$improve execute <计划文件>`，不必直接运行这个 helper。
+完整命令、计划的 `READY` / `BLOCKED` 语义、worktree 边界、预定义 agents 和独立复核规则见 [Improve 使用说明](codex-improve.md)。
 
 ## 用户和权限
 
