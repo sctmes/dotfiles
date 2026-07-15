@@ -44,8 +44,15 @@
         inherit inputs;
         username = "ysun";
       };
+      maintenancePolicy = upstream.lib.extendMaintenancePolicy upstream.lib.maintenancePolicyBase (
+        builtins.fromJSON (builtins.readFile ./scripts/maint/policy-overrides.json)
+      );
     in
     {
+      lib = {
+        inherit maintenancePolicy;
+      };
+
       devShells.${system} = {
         reactive-resume = pkgs.mkShell {
           packages = with pkgs; [

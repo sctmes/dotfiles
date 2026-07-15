@@ -1,0 +1,14 @@
+{
+  "riskMarkers": [
+    "docker",
+    "containerd"
+  ],
+  "allowedLocalBuildMarkers": [
+    "-futu-opend-10.8.6818.drv",
+    "-futu-opend-service.drv",
+    "-futu-opend.service.drv"
+  ],
+  "allowedDirectFetchMarkers": [
+    "Futu_OpenD_10.8.6818_Ubuntu18.04.tar.gz"
+  ]
+}
