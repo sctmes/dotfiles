@@ -50,13 +50,26 @@ EOF
 
 collect_blocked_derivations() {
   local repo="$1"
-  local policy_repo="$2"
-  local output_file="$3"
-  local direct_file="$4"
+  local output_file="$2"
+  local direct_file="$3"
   local dry_run_output="${tmp}/dry-run-$(basename "$repo").log"
+  local policy_file="${tmp}/policy-$(basename "$repo").json"
 
   : > "$output_file"
   : > "$direct_file"
+
+  if [[ -f "${repo}/scripts/maint/policy.json" \
+    && ! -f "${repo}/scripts/maint/policy-workstation.json" \
+    && ! -f "${repo}/scripts/maint/policy-overrides.json" ]]; then
+    # Revisions from before the flake policy interface stored one complete policy.
+    cp "${repo}/scripts/maint/policy.json" "$policy_file"
+  else
+    nix eval \
+      --json \
+      --override-input yazelix-next "path:${tmp}/yazelix-next-stub" \
+      "${repo}#lib.maintenancePolicy" \
+      > "$policy_file"
+  fi
 
   if ! (
     cd "$repo"
@@ -77,10 +90,10 @@ collect_blocked_derivations() {
     awk '/^[[:space:]]*\/nix\/store\/.*\.drv$/ { sub(/^[[:space:]]+/, ""); print }' "$dry_run_output" | sort -u
   )
   mapfile -t allowed_markers < <(
-    jq -r '.allowedLocalBuildMarkers[]' "${policy_repo}/scripts/maint/policy.json"
+    jq -r '.allowedLocalBuildMarkers[]' "$policy_file"
     printf '%s\n' "-yzn-ci-stub.drv"
   )
-  mapfile -t direct_markers < <(jq -r '.allowedDirectFetchMarkers[]' "${policy_repo}/scripts/maint/policy.json")
+  mapfile -t direct_markers < <(jq -r '.allowedDirectFetchMarkers[]' "$policy_file")
 
   local drv
   for drv in "${derivations[@]}"; do
@@ -108,8 +121,8 @@ head_direct="${tmp}/head.direct"
 new_blocked="${tmp}/new.blocked"
 new_direct="${tmp}/new.direct"
 
-collect_blocked_derivations "${tmp}/base" "$PWD" "$base_blocked" "$base_direct"
-collect_blocked_derivations "$PWD" "$PWD" "$head_blocked" "$head_direct"
+collect_blocked_derivations "${tmp}/base" "$base_blocked" "$base_direct"
+collect_blocked_derivations "$PWD" "$head_blocked" "$head_direct"
 
 comm -13 "$base_blocked" "$head_blocked" > "$new_blocked"
 comm -13 "$base_direct" "$head_direct" > "$new_direct"

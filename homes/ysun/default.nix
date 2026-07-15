@@ -4,11 +4,6 @@
   pkgs,
   ...
 }:
-let
-  upstreamMaintPolicy = builtins.fromJSON (
-    builtins.readFile "${inputs.upstream}/scripts/maint/policy.json"
-  );
-in
 {
   imports = [
     inputs.upstream.homeManagerModules.devHeadless
@@ -31,10 +26,6 @@ in
     enable = true;
     repo = "/home/ysun/github.com/sctmes/dotfiles";
     host = "116";
-    riskMarkers = upstreamMaintPolicy.riskMarkers ++ [
-      "docker"
-      "containerd"
-    ];
   };
 
   programs.git = {
