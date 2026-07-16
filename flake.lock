@@ -1415,11 +1415,11 @@
         "swww": "swww"
       },
       "locked": {
-        "lastModified": 1784103861,
-        "narHash": "sha256-ixzEv/vtPZUz3Bpnt1z1PPqOfmDWPbE/56SK2325fYs=",
+        "lastModified": 1784165407,
+        "narHash": "sha256-jNBDZzaieAeBcVPsqobToiS7F8obdRgtb688XWqKTxY=",
         "owner": "bioinformatist",
         "repo": "dotfiles",
-        "rev": "8d10211367b86c5a5030c4763c0cecdd9b08192e",
+        "rev": "b0faf3233fe555ab0f69abd8d5399e2594756619",
         "type": "github"
       },
       "original": {
