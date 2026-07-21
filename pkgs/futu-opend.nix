@@ -9,11 +9,11 @@
 
 stdenv.mkDerivation rec {
   pname = "futu-opend";
-  version = "10.8.6818";
+  version = "10.9.6908";
 
   src = fetchurl {
     url = "https://softwaredownload.futunn.com/Futu_OpenD_${version}_Ubuntu18.04.tar.gz";
-    hash = "sha256-m/H1DNydstAwvSwdtNr04JbWgQoeW9sGO5OV+UBR5xY=";
+    hash = "sha256-KLNQ0lhD3ijojI0T2e7ztFG1Ce4Gpa2Sfoq/dS/7cmw=";
   };
 
   sourceRoot = "Futu_OpenD_${version}_Ubuntu18.04/Futu_OpenD_${version}_Ubuntu18.04";

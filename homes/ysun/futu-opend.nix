@@ -90,6 +90,8 @@ in
     Unit = {
       Description = "Futu OpenD command line gateway";
       After = [ "network-online.target" ];
+      StartLimitIntervalSec = 900;
+      StartLimitBurst = 3;
     };
     Service = {
       ExecStart = "${launcher}/bin/futu-opend-service";
@@ -97,6 +99,5 @@ in
       RestartPreventExitStatus = "78";
       RestartSec = "10";
     };
-    Install.WantedBy = [ "default.target" ];
   };
 }

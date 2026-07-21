@@ -1448,11 +1448,11 @@
         "swww": "swww"
       },
       "locked": {
-        "lastModified": 1784369093,
-        "narHash": "sha256-Z7ylIBSU6aXjHI/RHmt+gkFkyXe6sfIiUFVheEYEK/I=",
+        "lastModified": 1784595242,
+        "narHash": "sha256-a5WE0Frxx69xjfyYYtzn75TERQ6k7kYaPs/wJYUFtu0=",
         "owner": "bioinformatist",
         "repo": "dotfiles",
-        "rev": "a9957e496a46f3320044031a621764fbe3a0a3de",
+        "rev": "c2440674bf53f6537f9200a0d2c1e546a03870ba",
         "type": "github"
       },
       "original": {
