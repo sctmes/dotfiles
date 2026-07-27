@@ -6,6 +6,10 @@
 {
   imports = [ inputs.upstream.nixosModules.nixNetwork ];
 
+  nix.settings.extra-substituters = [
+    "https://cache.nixos.org"
+  ];
+
   dotfiles.nixNetwork = {
     profile = "china";
     proxy = {
