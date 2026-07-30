@@ -1,4 +1,5 @@
 .direnv/
+plans/
 result
 secrets/*.dec
 secrets/**/*.dec
