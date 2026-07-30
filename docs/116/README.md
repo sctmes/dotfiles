@@ -81,11 +81,11 @@ maint-switch
 
 `maint-switch` 只应用当前仓库状态，不会自动更新 flake inputs。依赖更新和 rebuild 流程见 [CONTRIBUTING.md](../../CONTRIBUTING.md)。
 
-### Yazelix Next
+### Yazelix Nova
 
-`116` 只为 `ysun` 安装实验中的 Yazelix Next，入口命令是 `yzn`。上游通用 dotfiles 不安装 Yazelix；等 `yzn` 更稳定后，再决定是否提升为所有机器的声明式配置。
+`116` 只为 `ysun` 安装 public Yazelix Nova `main` 的 `yazelix-no-mars`，这是适合 SSH/headless 环境的版本，入口命令是 `yzx enter`。`zky` 和 `wangrongfeng` 不会获得 Yazelix 或通用 Zellij；上游通用 dotfiles 也不安装 Yazelix。
 
-更新 `yzn` 时只更新 `yazelix-next` flake input；具体流程见 [CONTRIBUTING.md](../../CONTRIBUTING.md)。`yazelix-next` 目前是私有仓库，执行更新的用户需要有对应 GitHub SSH 读取权限。
+Renovate 每天检查 `yazelix` input，maintenance gate 通过后可以自动合并 PR，但不会 build、rebuild 或部署 `116`。首次迁移需要 root 用 Yazelix Cachix bootstrap 目标 closure；后续更新、回退和运维应用边界见 [CONTRIBUTING.md](../../CONTRIBUTING.md)。
 
 ## 主要服务
 

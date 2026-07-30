@@ -5,8 +5,8 @@ def main [
   --extra-dir: string = "/tmp/sctmes-116-extra",
   --proxy: string,
   --substituters: string = "https://mirrors.ustc.edu.cn/nix-channels/store https://cache.nixos.org",
-  --extra-substituters: string = "",
-  --extra-trusted-public-keys: string = "",
+  --extra-substituters: string = "https://yazelix.cachix.org",
+  --extra-trusted-public-keys: string = "yazelix.cachix.org-1:ZgxIjQvaP0VTWL8Racx27mpUNzDJ97xC2y7QWYjmGNM=",
   --phases: string = "kexec,disko,install,reboot",
 ] {
   if ($proxy | is-empty) {
@@ -22,7 +22,7 @@ def main [
   let key_dst = ($persist_dir | path join "key.txt")
   let runtime_key_dst = ($runtime_dir | path join "key.txt")
   let nix_config = $"substituters = ($substituters)\nextra-substituters = ($extra_substituters)\nextra-trusted-public-keys = ($extra_trusted_public_keys)"
-  let no_proxy = "mirrors.ustc.edu.cn,cache.nixos.org,127.0.0.1,localhost"
+  let no_proxy = "mirrors.ustc.edu.cn,cache.nixos.org,yazelix.cachix.org,127.0.0.1,localhost"
   let expected_extra_substituters = ($extra_substituters | split row " " | where {|item| not ($item | is-empty) })
   let expected_extra_trusted_public_keys = ($extra_trusted_public_keys | split row " " | where {|item| not ($item | is-empty) })
   let effective_nix_config = (with-env { NIX_CONFIG: $nix_config } { ^nix config show --json | from json })

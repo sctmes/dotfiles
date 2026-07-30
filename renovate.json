@@ -29,6 +29,19 @@
       "addLabels": ["policy-upstream"]
     },
     {
+      "description": "Track Yazelix Nova main for ysun through the maintenance gate.",
+      "matchManagers": ["nix"],
+      "matchDepNames": ["yazelix"],
+      "schedule": ["* 16-19 * * *"],
+      "automerge": true,
+      "automergeType": "pr",
+      "semanticCommits": "enabled",
+      "semanticCommitType": "chore",
+      "semanticCommitScope": "maint",
+      "commitMessageTopic": "Yazelix Nova main",
+      "addLabels": ["experimental-yazelix"]
+    },
+    {
       "description": "Keep host-local and private inputs manual.",
       "matchManagers": ["nix"],
       "matchDepNames": [
@@ -36,8 +49,7 @@
         "home-manager",
         "impermanence",
         "nixpkgs",
-        "sops-nix",
-        "yazelix-next"
+        "sops-nix"
       ],
       "enabled": false
     }

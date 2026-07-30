@@ -16,7 +16,7 @@
       url = "github:Mic92/sops-nix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    yazelix-next.url = "git+ssh://git@github.com/luccahuguet/yazelix-next.git";
+    yazelix.url = "github:luccahuguet/yazelix/main";
     upstream = {
       url = "github:bioinformatist/dotfiles";
       inputs.disko.follows = "disko";
