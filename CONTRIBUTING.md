@@ -29,13 +29,17 @@ maint-switch
 
 - upstream-owned 工具、Codex release pin、Codex skills/MCP、headless 开发工具声明和维护门控策略来自 `bioinformatist/dotfiles`。这些更新先进入 upstream，再通过更新本仓库的 `upstream` flake input 被 `116` 消费。
 - `116` 的基础 `nixpkgs`、`home-manager`、`sops-nix`、`disko`、`impermanence` 和 downstream 服务配置由本仓库自己的 flake lock 管理。
-- `yazelix-next` 是 `116` 上 `ysun` 的实验性私有工具，不属于 upstream 通用配置，也不作为 `maint-*` 日常入口。
+- public Yazelix Nova `main` 是 `116` 上仅供 `ysun` 使用的 downstream 实验。Home Manager 安装适合 SSH/headless 环境的 `yazelix-no-mars`，入口是 `yzx enter`；它不属于 upstream 通用配置，也不会提供给 `zky` 或 `wangrongfeng`。
 
-`upstream` input 由 Renovate 每 4 小时检查一次并提交 PR。这个自动化只移动
-`upstream`，不更新 downstream-owned inputs，也不更新私有 `yazelix-next`。GitHub
-Actions 会用临时 `yazelix-next` stub 跑 `116` cache gate，避免 CI 需要读取 Lucca
-私有仓库；gate 比较 PR 和 `main`，只拦新增的未批准本地构建。真正的构建和切换仍由
-运维用户在目标机器上执行 `maint-switch`。
+`upstream` input 由 Renovate 每 4 小时检查一次。`yazelix` 每天在 UTC
+16:00–19:59（Asia/Shanghai 次日 00:00–03:59）的 eligibility window 内检查。
+只有这两个 input 可以自动更新；Yazelix PR 通过现有 maintenance gate 后可以
+automerge。gate 会对 public Yazelix 做真实求值；只有迁移 PR 的 legacy base
+仍声明 `yazelix-next` 时才使用最小临时 stub。其他 downstream-owned inputs
+继续禁用自动更新。
+
+Renovate automerge 只合并 lock PR，绝不会 build、rebuild 或部署 `116`。真正的构建
+和切换仍由运维用户从已审查的干净 `main` 在目标机器上执行 `maint-switch`。
 
 更新 upstream 时只更新对应 flake input：
 
@@ -60,17 +64,17 @@ Hyprland、GCC/Rust toolchain、Chromium/Electron 等重组件加入 allowlist�
 网络问题需要按路径拆分：Nix cache、GitHub release/direct fetch、npm registry 或
 node-gyp、Cargo registry 和运行时代理不是同一个问题。
 
-更新 `yazelix-next` 时也走显式手动流程：
+首次从 Yazelix Next 迁移时，普通用户不能让 Nix daemon 信任临时指定的 Cachix。
+合并并检查干净 `main` 后，由 root 先显式 bootstrap 目标 closure：
 
 ```nu
-nix flake update yazelix-next
-git diff flake.lock
-git add flake.lock
-git commit -m "chore: update yazelix next"
+sudo nix build --no-link --print-out-paths --option extra-substituters https://yazelix.cachix.org --option extra-trusted-public-keys 'yazelix.cachix.org-1:ZgxIjQvaP0VTWL8Racx27mpUNzDJ97xC2y7QWYjmGNM=' .#nixosConfigurations.116.config.system.build.toplevel
 maint-switch --no-pull
 ```
 
-如果 dry-run 显示会触发暂时不想接受的本地构建，停止在提交前或回退对应 `flake.lock` 变更。`yazelix-next` 目前是私有仓库，执行更新的用户需要有对应 GitHub SSH 读取权限。
+后续 Yazelix 更新以 Renovate PR、maintenance gate 和对应 `flake.lock` 变更为审查及
+回退边界；需要回退时恢复上一份已审查的 lock/main 状态，再由运维用户构建和切换。
+不要绕过 gate，也不要把自动合并理解为自动部署。
 
 ## 责任边界
 

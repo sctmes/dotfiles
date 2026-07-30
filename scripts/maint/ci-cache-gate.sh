@@ -4,8 +4,8 @@ set -euo pipefail
 host="${HOST:-116}"
 base_branch="${GITHUB_BASE_REF:-main}"
 base_ref="origin/${base_branch}"
-default_china_substituters="https://mirrors.ustc.edu.cn/nix-channels/store https://anyrun.cachix.org https://hyprland.cachix.org"
-default_china_extra_trusted_public_keys="anyrun.cachix.org-1:pqBobmOjI7nKlsUMV25u9QHa9btJK65/C8vnO3p346s= hyprland.cachix.org-1:a7pgxzMz7+chwVL3/pzj6jIBMioiJM7ypFP8PwtkuGc="
+default_china_substituters="https://mirrors.ustc.edu.cn/nix-channels/store https://anyrun.cachix.org https://hyprland.cachix.org https://yazelix.cachix.org"
+default_china_extra_trusted_public_keys="anyrun.cachix.org-1:pqBobmOjI7nKlsUMV25u9QHa9btJK65/C8vnO3p346s= hyprland.cachix.org-1:a7pgxzMz7+chwVL3/pzj6jIBMioiJM7ypFP8PwtkuGc= yazelix.cachix.org-1:ZgxIjQvaP0VTWL8Racx27mpUNzDJ97xC2y7QWYjmGNM="
 china_substituters="${CHINA_SUBSTITUTERS:-${default_china_substituters}}"
 china_extra_trusted_public_keys="${CHINA_EXTRA_TRUSTED_PUBLIC_KEYS:-${default_china_extra_trusted_public_keys}}"
 tmp="$(mktemp -d)"
@@ -54,6 +54,15 @@ collect_blocked_derivations() {
   local direct_file="$3"
   local dry_run_output="${tmp}/dry-run-$(basename "$repo").log"
   local policy_file="${tmp}/policy-$(basename "$repo").json"
+  local -a override_args=()
+  local -a snapshot_allowed_markers=()
+
+  if grep -qE '^[[:space:]]*yazelix-next[.]url[[:space:]]*=' "${repo}/flake.nix"; then
+    override_args=(
+      --override-input yazelix-next "path:${tmp}/yazelix-next-stub"
+    )
+    snapshot_allowed_markers=("-yzn-ci-stub.drv")
+  fi
 
   : > "$output_file"
   : > "$direct_file"
@@ -66,7 +75,7 @@ collect_blocked_derivations() {
   else
     nix eval \
       --json \
-      --override-input yazelix-next "path:${tmp}/yazelix-next-stub" \
+      "${override_args[@]}" \
       "${repo}#lib.maintenancePolicy" \
       > "$policy_file"
   fi
@@ -76,7 +85,7 @@ collect_blocked_derivations() {
     nix build \
       --dry-run \
       -L \
-      --override-input yazelix-next "path:${tmp}/yazelix-next-stub" \
+      "${override_args[@]}" \
       --option substituters "$china_substituters" \
       --option extra-substituters "" \
       --option extra-trusted-public-keys "$china_extra_trusted_public_keys" \
@@ -91,7 +100,9 @@ collect_blocked_derivations() {
   )
   mapfile -t allowed_markers < <(
     jq -r '.allowedLocalBuildMarkers[]' "$policy_file"
-    printf '%s\n' "-yzn-ci-stub.drv"
+    if ((${#snapshot_allowed_markers[@]})); then
+      printf '%s\n' "${snapshot_allowed_markers[@]}"
+    fi
   )
   mapfile -t direct_markers < <(jq -r '.allowedDirectFetchMarkers[]' "$policy_file")
 

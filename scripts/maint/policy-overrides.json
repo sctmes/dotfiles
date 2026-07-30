@@ -5,7 +5,10 @@
   ],
   "allowedLocalBuildMarkers": [
     "-futu-opend-",
-    "-futu-opend.service.drv"
+    "-futu-opend.service.drv",
+    "-config.kdl.drv",
+    "-runtime_identity.json.drv",
+    "-yazelix-no-mars.drv"
   ],
   "allowedDirectFetchMarkers": [
     "-Futu_OpenD_"

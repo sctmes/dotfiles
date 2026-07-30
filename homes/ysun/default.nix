@@ -7,6 +7,7 @@
 {
   imports = [
     inputs.upstream.homeManagerModules.devHeadless
+    inputs.yazelix.homeManagerModules.default
     ./futu-opend.nix
   ];
 
@@ -18,9 +19,11 @@
     loginFile.text = lib.mkForce "";
   };
 
-  home.packages = [
-    inputs.yazelix-next.packages.${pkgs.stdenv.hostPlatform.system}.yzn
-  ];
+  programs.yazelix = {
+    enable = true;
+    package =
+      inputs.yazelix.packages.${pkgs.stdenv.hostPlatform.system}.yazelix-no-mars;
+  };
 
   dotfiles.maint = {
     enable = true;
