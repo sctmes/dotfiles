@@ -134,9 +134,27 @@ nu ./scripts/install-116.nu root@192.168.0.116 --proxy http://<lan-proxy>:<port>
 安装完成后：
 
 1. 用 `ysun` 登录。
-2. 打开 Mihomo 网页界面，导入或替换 `/persist/mihomo/config.yaml`。
-3. 恢复模型文件到 `/var/lib/ai-serving/models`。
-4. 检查核心服务：
+2. 克隆本仓库到 `/home/ysun/github.com/sctmes/dotfiles`。
+3. 打开 Mihomo 网页界面，导入或替换 `/persist/mihomo/config.yaml`。
+4. 应用仓库声明的系统配置，再显式重跑 Mihomo bootstrap unit：
+
+   ```nu
+   nu --login -c 'maint-switch --no-pull --repo /home/ysun/github.com/sctmes/dotfiles'
+   sudo systemctl restart mihomo-config-bootstrap.service
+   ```
+
+   `mihomo-config-bootstrap` 是 `RemainAfterExit` 的 oneshot。导入运行配置后，即使目标 generation 没有变化，也要显式重跑该 unit 才能保证执行归一化。
+5. 确认归一化结果：`Proxy` 只包含 `WestWorld Auto`；`WestWorld Auto` 每 1800 秒测试一次 `WestWorld` provider 中严格匹配日本的节点，使用 `tolerance: 0` 和 `lazy: false`；`YToo Backup` 代理组已移除；`YToo` provider 保留定义，但不参与路由。
+6. 验证配置并重启 Mihomo：
+
+   ```nu
+   docker exec mihomo /mihomo -t -d /root/.config/mihomo -f /root/.config/mihomo/config.yaml
+   sudo systemctl restart mihomo-compose.service
+   ```
+
+   不得使用 `PUT /configs?force=true`。重启会短暂删除并重新创建 `Meta` TUN 接口。
+7. 恢复模型文件到 `/var/lib/ai-serving/models`。
+8. 检查核心服务：
 
    ```nu
    systemctl status mihomo-compose.service
@@ -145,8 +163,16 @@ nu ./scripts/install-116.nu root@192.168.0.116 --proxy http://<lan-proxy>:<port>
    systemctl status label-studio-compose.service
    ```
 
-5. 在 `https://label.bigdick.live:2053` 登录 Label Studio 并轮换初始密码。
-6. 克隆本仓库到 `/home/ysun/github.com/sctmes/dotfiles`。
+9. 如需回退 Mihomo 路由策略，按以下顺序操作：
+
+   1. 恢复此前已审核的仓库源码/检查点。
+   2. 从该版本运行 `nu --login -c 'maint-switch --no-pull --repo /home/ysun/github.com/sctmes/dotfiles'`。
+   3. 将 `/persist/mihomo/config.yaml.before-westworld-japan-policy` 恢复到 `/persist/mihomo/config.yaml`，并保留原 owner、group 和 mode。
+   4. 运行 `docker exec mihomo /mihomo -t -d /root/.config/mihomo -f /root/.config/mihomo/config.yaml` 验证配置。
+   5. 运行 `sudo systemctl restart mihomo-compose.service`。
+   6. 如果固定备份不存在，应先回退仓库源码，再恢复此前已知可用的运行时配置，并按相同顺序验证和重启。
+
+10. 在 `https://label.bigdick.live:2053` 登录 Label Studio 并轮换初始密码。
 
 ## GitHub 认证
 

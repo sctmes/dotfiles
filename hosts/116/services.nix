@@ -37,6 +37,214 @@ let
         - https://dns.alidns.com/dns-query
         - https://dns.google/dns-query
   '';
+  enforceMihomoRoutingPolicy = pkgs.writeShellApplication {
+    name = "enforce-mihomo-routing-policy";
+    runtimeInputs = with pkgs; [
+      coreutils
+      yq-go
+      mihomo
+    ];
+    excludeShellChecks = [ "SC2016" ];
+    text = ''
+      set -euo pipefail
+
+      usage='usage: enforce-mihomo-routing-policy [--check|--apply] CONFIG_PATH'
+      if [ "$#" -ne 2 ]; then
+        printf '%s\n' "$usage" >&2
+        exit 64
+      fi
+
+      case "$1" in
+        --check|--apply)
+          mode="$1"
+          ;;
+        *)
+          printf '%s\n' "$usage" >&2
+          exit 64
+          ;;
+      esac
+      config_input="$2"
+
+      fail() {
+        printf '%s\n' "$1" >&2
+        exit 1
+      }
+
+      if [ ! -f "$config_input" ]; then
+        fail 'error: config is not a regular file'
+      fi
+      if ! config_path="$(realpath -- "$config_input" 2>/dev/null)"; then
+        fail 'error: cannot resolve config'
+      fi
+      config_dir="$(dirname -- "$config_path")"
+
+      if yq eval -e '((.["proxy-providers"] // {}) | keys | length) == 0' "$config_path" >/dev/null 2>&1; then
+        printf '%s\n' 'ready: WestWorld Japan matches=0'
+        exit 0
+      fi
+
+      if ! yq eval -e '
+        (.["proxy-providers"] // {}) as $providers |
+        (.["proxy-groups"] // []) as $groups |
+        [
+          (($providers | to_entries | map(select(.key == "WestWorld")) | length) == 1),
+          (($groups | map(select(.name == "Proxy")) | length) == 1),
+          (($groups | map(select(.name == "WestWorld Auto")) | length) == 1),
+          (($groups | map(select(.name == "YToo Backup")) | length) <= 1)
+        ] | all
+      ' "$config_path" >/dev/null 2>&1; then
+        fail 'error: required Mihomo routing structure is invalid'
+      fi
+
+      if ! yq eval -e '
+        (.["proxy-providers"].WestWorld.path | tag) == "!!str"
+        and (.["proxy-providers"].WestWorld.path | length) > 0
+      ' "$config_path" >/dev/null 2>&1; then
+        fail 'error: WestWorld provider path is invalid'
+      fi
+      if ! provider_path="$(yq eval -r '.["proxy-providers"].WestWorld.path' "$config_path" 2>/dev/null)"; then
+        fail 'error: WestWorld provider path is invalid'
+      fi
+      case "$provider_path" in
+        ""|/*)
+          fail 'error: WestWorld provider path is invalid'
+          ;;
+      esac
+      if ! provider_cache="$(realpath -m -- "$config_dir/$provider_path" 2>/dev/null)"; then
+        fail 'error: WestWorld provider cache is unavailable'
+      fi
+      case "$provider_cache" in
+        "$config_dir"/*)
+          ;;
+        *)
+          fail 'error: WestWorld provider path is unsafe'
+          ;;
+      esac
+      if [ ! -f "$provider_cache" ] || [ ! -r "$provider_cache" ]; then
+        fail 'error: WestWorld provider cache is unavailable'
+      fi
+
+      count_japan_matches() {
+        yq eval '[.proxies[]? | select(.name | test("(?i)(日本|🇯🇵|\\bJP\\b)"))] | length' "$provider_cache" 2>/dev/null
+      }
+
+      if ! japan_matches="$(count_japan_matches)"; then
+        fail 'error: cannot inspect WestWorld provider cache'
+      fi
+      if ! [[ "$japan_matches" =~ ^[0-9]+$ ]] || [ "$japan_matches" -le 0 ]; then
+        fail 'error: WestWorld provider cache has no eligible Japan nodes'
+      fi
+      printf 'ready: WestWorld Japan matches=%s\n' "$japan_matches"
+
+      if [ "$mode" = '--check' ]; then
+        exit 0
+      fi
+
+      target_state_matches() {
+        yq eval -e '
+          (.["proxy-groups"] // []) as $groups |
+          ($groups | map(select(.name == "Proxy"))) as $proxy |
+          ($groups | map(select(.name == "WestWorld Auto"))) as $westworld |
+          ($groups | map(select(.name == "YToo Backup"))) as $backup |
+          [
+            (($proxy | length) == 1),
+            ($proxy[0].type == "select"),
+            (($proxy[0].proxies | length) == 1),
+            ($proxy[0].proxies[0] == "WestWorld Auto"),
+            ($proxy[0] | (
+              has("use")
+              or has("url")
+              or has("interval")
+              or has("tolerance")
+              or has("lazy")
+              or has("filter")
+              or has("exclude-filter")
+            ) | not),
+            (($westworld | length) == 1),
+            ($westworld[0].type == "url-test"),
+            (($westworld[0].use | length) == 1),
+            ($westworld[0].use[0] == "WestWorld"),
+            ($westworld[0].url == "https://www.gstatic.com/generate_204"),
+            ($westworld[0].interval == 1800),
+            ($westworld[0].tolerance == 0),
+            ($westworld[0] | has("lazy")),
+            ($westworld[0].lazy == false),
+            ($westworld[0].filter == "(?i)(日本|🇯🇵|\\bJP\\b)"),
+            ($westworld[0] | (has("proxies") or has("exclude-filter")) | not),
+            (($backup | length) == 0)
+          ] | all
+        ' "$1" >/dev/null 2>&1
+      }
+
+      if target_state_matches "$config_path"; then
+        exit 0
+      fi
+
+      if ! original_metadata="$(stat -c '%a %u %g' -- "$config_path" 2>/dev/null)"; then
+        fail 'error: cannot read config metadata'
+      fi
+      read -r original_mode original_uid original_gid <<< "$original_metadata"
+
+      backup_path="$config_path.before-westworld-japan-policy"
+      if [ ! -e "$backup_path" ] && [ ! -L "$backup_path" ]; then
+        if ! cp --no-clobber --preserve=mode,ownership -- "$config_path" "$backup_path" 2>/dev/null; then
+          fail 'error: cannot create routing-policy backup'
+        fi
+      fi
+
+      if ! tmp_file="$(mktemp "$config_dir/.mihomo-routing-policy.XXXXXX" 2>/dev/null)"; then
+        fail 'error: cannot create temporary config'
+      fi
+      cleanup() {
+        if [ -n "$tmp_file" ]; then
+          rm -f -- "$tmp_file"
+        fi
+      }
+      trap cleanup EXIT
+
+      if ! yq eval --output-format=yaml '
+        (.["proxy-groups"][] | select(.name == "Proxy")) |= (
+          .type = "select"
+          | .proxies = ["WestWorld Auto"]
+          | del(.use, .url, .interval, .tolerance, .lazy, .filter, .["exclude-filter"])
+        )
+        | (.["proxy-groups"][] | select(.name == "WestWorld Auto")) |= (
+          .type = "url-test"
+          | .use = ["WestWorld"]
+          | .url = "https://www.gstatic.com/generate_204"
+          | .interval = 1800
+          | .tolerance = 0
+          | .lazy = false
+          | .filter = "(?i)(日本|🇯🇵|\\bJP\\b)"
+          | del(.proxies, .["exclude-filter"])
+        )
+        | .["proxy-groups"] |= map(select(.name != "YToo Backup"))
+      ' "$config_path" > "$tmp_file" 2>/dev/null; then
+        fail 'error: cannot transform routing policy'
+      fi
+
+      if ! target_state_matches "$tmp_file"; then
+        fail 'error: transformed routing policy does not match target'
+      fi
+      if ! japan_matches_after="$(count_japan_matches)"; then
+        fail 'error: cannot recheck WestWorld provider cache'
+      fi
+      if ! [[ "$japan_matches_after" =~ ^[0-9]+$ ]] || [ "$japan_matches_after" -le 0 ]; then
+        fail 'error: WestWorld provider cache has no eligible Japan nodes'
+      fi
+      if ! mihomo -t -d "$config_dir" -f "$tmp_file" >/dev/null 2>&1; then
+        fail 'error: transformed Mihomo config is invalid'
+      fi
+      if ! chown "$original_uid:$original_gid" "$tmp_file" 2>/dev/null \
+        || ! chmod "$original_mode" "$tmp_file" 2>/dev/null; then
+        fail 'error: cannot prepare transformed config metadata'
+      fi
+      if ! mv -f -- "$tmp_file" "$config_path" 2>/dev/null; then
+        fail 'error: cannot replace Mihomo config'
+      fi
+      tmp_file=""
+    '';
+  };
   aiServingDir = "/var/lib/ai-serving";
   vllmDir = "/etc/sctmes/116/vllm";
   searxngDir = "/etc/sctmes/116/searxng";
@@ -239,6 +447,7 @@ in
         description = "Bootstrap local Mihomo config";
         before = [ "mihomo-compose.service" ];
         requiredBy = [ "mihomo-compose.service" ];
+        path = [ enforceMihomoRoutingPolicy ];
         serviceConfig = {
           Type = "oneshot";
           RemainAfterExit = true;
@@ -276,6 +485,8 @@ dns:
     - https://dns.google/dns-query
 EOF
           fi
+
+          enforce-mihomo-routing-policy --apply /persist/mihomo/config.yaml
         '';
       };
 
