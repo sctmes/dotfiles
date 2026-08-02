@@ -4,32 +4,51 @@
 
 ## headless 开发环境
 
-所有 headless dev 用户都继承 upstream 的 headless 开发工具集，包括 `gh`、Codex、Nushell、Helix、Yazi、ripgrep，以及下列 Codex 全局能力：
+`116` 通过本仓库锁定的 `upstream` flake input 继承 headless 开发工具集，包括 `gh`、Codex、Nushell、Helix、Yazi 和 ripgrep。下表记录当前 upstream 管理的共享 Codex 能力及其触发边界；Codex release 自带且不由 dotfiles 管理的 system Skills 也单独列出，避免混淆两种来源。
+
+upstream 合并、下游更新 `flake.lock` 和 `116` 完成 rebuild 是三个不同阶段。三步全部完成后，新能力才会出现在服务器上的新 Codex 会话中；不能只根据 upstream PR 已合并就判断已经部署。
 
 | 名称 | 类型 | 触发条件 | 功能 |
 | --- | --- | --- | --- |
 | [全局 `AGENTS.md`](https://github.com/bioinformatist/dotfiles/blob/main/home/programs/codex/default.nix) | 全局指令 | Codex 启动后自动读取生成的 `~/.codex/AGENTS.md`。 | 补充跨仓库工作偏好：采用最小但完整的改动、让建议和术语解释具备充分上下文、遵循 Git/Nix 约定，并执行 Context7 fallback 与 per-user secret routing 等通用 capability routing。 |
+| [OpenAI system Skills](https://developers.openai.com/codex/skills) | Codex 内置 Skills | 随当前 Codex release 提供；任务匹配 description 或用户用 `$skill-name` 显式要求时加载。 | 提供 `$skill-creator`、`$skill-installer` 等通用能力。具体清单不由 dotfiles 固定，应在当前会话用 `/skills` 查看。 |
 | [GitHub MCP](https://github.com/github/github-mcp-server) | MCP | Codex 注册 `github` MCP；处理 GitHub repo、issue、PR、review、CI 相关任务时调用。 | 通过用户自己的 GitHub token 访问 GitHub context、issues、pull requests、repos、users 和 orgs。token 配置见下方“GitHub 认证”。 |
 | [GitHub curated plugin](https://github.com/openai/plugins/tree/main/plugins/github) | Skill plugin | Codex 启用 `github@openai-curated`；处理 GitHub issue、PR、review、CI 或发布本地改动时可能触发。 | 在 GitHub MCP 之上提供更高层工作流 skills，例如处理 PR review comments、修复 GitHub Actions CI、梳理 repo/issue/PR 上下文和发布本地修改。 |
 | [Context7 MCP](https://github.com/upstash/context7) | MCP | Codex 注册匿名 `context7` MCP；涉及库、框架、SDK、API、CLI 或云服务当前文档时使用。 | 默认先用匿名 Context7 拉取较新的项目文档；登记了个人 API key 的用户还会得到 `context7_auth` fallback，匿名额度不可用时再使用自己的认证额度。 |
-| [`improve`](https://github.com/shadcn/improve/tree/03369ee6d7cafbfcecc4346539b05b3dc0a603bb/skills/improve) | Skill + executors/reviewers | 想系统检查一个代码库、收敛实施计划并隔离执行时，在 Codex 对话中使用 `$improve`。 | advisor 先把计划收敛为 `READY` 或 `BLOCKED`，executor 在独立 worktree 实现；行为重要或结构复杂的改动还会按条件接受 correctness 或 elegance 独立复核。完整用法见 [Improve 使用说明](codex-improve.md)。 |
-| [Playwright CLI skill](https://github.com/microsoft/playwright-cli/tree/v0.1.14/skills/playwright-cli) | Skill | 浏览器自动化、页面预览、截图、交互验证或 Playwright 相关任务；也可显式要求 `$playwright-cli`。 | 用 Playwright 驱动浏览器，验证 headless web UI、页面状态、截图和交互行为。 |
-| [stop-slop](https://github.com/hardikpandya/stop-slop/tree/8da1f030185bdfe8471220585162991eaeb970e9) | Skill | 英文 PR、issue、release notes、README/docs、公评文本等 publishable prose 的最终润色；也可显式要求 `$stop-slop`。 | 在不改技术事实、命令、日志、标识符和有用不确定性的前提下，去掉公式化 AI 文风。 |
+| [`improve`](https://github.com/shadcn/improve/tree/03369ee6d7cafbfcecc4346539b05b3dc0a603bb/skills/improve) | Skill + executors/reviewers | 想系统检查代码库、收敛实施计划并隔离执行时，在 Codex 对话中使用 `$improve`。 | advisor 把计划收敛为 `READY` 或 `BLOCKED`，声明执行环境和 Spark/standard/deep lane；runner 在独立 worktree 预检并执行，之后按风险触发 correctness 或 elegance 复核。完整用法见 [Improve 使用说明](codex-improve.md)。 |
+| [Playwright CLI skill](https://github.com/microsoft/playwright-cli/tree/v0.1.17/skills/playwright-cli) | Skill | 浏览器自动化、页面预览、截图、交互验证或 Playwright 相关任务；也可显式要求 `$playwright-cli`。 | 使用 Playwright CLI 做 headless-first 的页面检查和自动化，默认采用 snapshot/screenshot；只有用户明确要求且存在图形会话时才使用交互 annotation。 |
+| [stop-slop](https://github.com/hardikpandya/stop-slop/tree/8da1f030185bdfe8471220585162991eaeb970e9) | Skill | 英文 PR、issue、release notes、README/docs、公开评论等 publishable prose 的最终润色；也可显式要求 `$stop-slop`。 | 在不改技术事实、命令、日志、标识符和有用不确定性的前提下，去掉公式化 AI 文风。 |
 | [Ponytail Review](https://github.com/DietrichGebert/ponytail/tree/v4.8.3/skills/ponytail-review) | Skill | 用户明确要求 over-engineering review、simplify review、what can we delete，或显式 `$ponytail-review`。 | 只审复杂度：指出可删除的 speculative abstraction、重复造轮子、无用依赖和死弹性。 |
 | [Ponytail Audit](https://github.com/DietrichGebert/ponytail/tree/v4.8.3/skills/ponytail-audit) | Skill | 用户明确要求全仓库 over-engineering audit、find bloat、what can I delete，或显式 `$ponytail-audit`。 | 对整个 repo 做复杂度审计，输出按优先级排序的删除、简化和 stdlib/native 替代建议。 |
 | [Ponytail Debt](https://github.com/DietrichGebert/ponytail/tree/v4.8.3/skills/ponytail-debt) | Skill | 用户明确要求 ponytail debt、列出 `ponytail:` 注释，或显式 `$ponytail-debt`。 | 汇总代码中有意留下的 `ponytail:` 延后事项，避免临时取舍失去上下文。 |
-| [Diagnosing Bugs](https://github.com/mattpocock/skills/tree/v1.0.1/skills/engineering/diagnosing-bugs) | Skill | 遇到具体 bug、回归、flaky failure 或原因不明的性能问题；也可显式要求 `$diagnosing-bugs`。 | 用紧反馈循环建立复现、区分事实和假设、逐步缩小根因，不把普通实现任务误当调试流程。 |
-| [TDD](https://github.com/mattpocock/skills/tree/v1.0.1/skills/engineering/tdd) | Skill | 用户要求 test-first、先写回归测试再修 bug，或显式要求 `$tdd`。 | 通过 red-green-refactor 和面向行为的测试推进改动，优先经公开接口验证行为。 |
-| [Codebase Design](https://github.com/mattpocock/skills/tree/v1.0.1/skills/engineering/codebase-design) | Skill | 设计或调整模块边界、接口深度、seam、adapter、可测试性时；也可显式要求 `$codebase-design`。 | 提供深模块、接口、seam、locality 等架构词汇，用于评估模块边界是否值得调整。 |
-| [Grilling](https://github.com/mattpocock/skills/tree/v1.0.1/skills/productivity/grilling) | Skill | 用户明确要求 grill、interrogate、stress-test plan，或显式要求 `$grilling`。 | 在实现前逐问 stress-test 计划或设计，帮助暴露隐含假设和弱论证。 |
+| [Diagnosing Bugs](https://github.com/mattpocock/skills/tree/2ab958093e83e0ec752e6c1c5932da465bf23e0c/skills/engineering/diagnosing-bugs) | Skill | 遇到具体 bug、回归、flaky failure 或原因不明的性能问题；也可显式要求 `$diagnosing-bugs`。 | 用紧反馈循环建立复现、区分事实和假设、逐步缩小根因，不把普通实现任务误当调试流程。 |
+| [TDD](https://github.com/mattpocock/skills/tree/2ab958093e83e0ec752e6c1c5932da465bf23e0c/skills/engineering/tdd) | Skill | 用户要求 test-first、先写回归测试再修 bug，或显式要求 `$tdd`。 | 从已接受计划、规格或仓库证据确定测试 seam；只有 seam 仍有材料性歧义时才询问用户，并在测试保持 green 时重构。 |
+| [Codebase Design](https://github.com/mattpocock/skills/tree/2ab958093e83e0ec752e6c1c5932da465bf23e0c/skills/engineering/codebase-design) | Skill | 设计或调整模块边界、接口深度、seam、adapter、可测试性时；也可显式要求 `$codebase-design`。 | 提供深模块、接口、seam、locality 等架构词汇，用于评估模块边界是否值得调整。不会自动派生多个 agent。 |
+| [Grilling](https://github.com/mattpocock/skills/tree/2ab958093e83e0ec752e6c1c5932da465bf23e0c/skills/productivity/grilling) | Skill | 仅在用户明确要求 grill、interrogate、interview、stress-test 某个计划、决定或想法时触发；也可显式要求 `$grilling`。 | 一次提出一个问题，在行动前暴露隐含假设、弱论证和缺失决策。 |
+| [Handoff](https://github.com/mattpocock/skills/tree/2ab958093e83e0ec752e6c1c5932da465bf23e0c/skills/productivity/handoff) | Skill | 仅在用户明确要求为另一个会话准备 handoff，或显式要求 `$handoff` 时触发。 | 在 `$TMPDIR` 或 `/tmp` 写一份唯一命名、已脱敏的 Markdown 交接文件，引用现有计划、commit 和日志，不复制整份 artifact，也不会自动启动新会话。 |
+| [Domain Modeling](https://github.com/mattpocock/skills/tree/2ab958093e83e0ec752e6c1c5932da465bf23e0c/skills/engineering/domain-modeling) | Skill | 正在修改 glossary、ubiquitous language 或记录 ADR 级决定时触发；仅读取 `CONTEXT.md` 不会触发。也可显式要求 `$domain-modeling`。 | 收敛领域术语、概念关系和持久架构决定，减少同一概念在代码和文档中的语义漂移。 |
+| [Resolving Merge Conflicts](https://github.com/mattpocock/skills/tree/2ab958093e83e0ec752e6c1c5932da465bf23e0c/skills/engineering/resolving-merge-conflicts) | Skill | Git 已处于 merge/rebase 且存在未解决 conflict hunk 时触发；也可显式要求 `$resolving-merge-conflicts`。 | 根据 commit、PR、issue、计划和周边代码恢复双方意图，只处理现有冲突并验证结果；不会自行 continue/abort、commit、push、reset、discard 或 clean。 |
+
+Skill 是可复用工作流，不会扩大当前任务的授权范围。即使某个 Skill 可以修改文件或调用外部工具，commit、push、merge、部署、重建和破坏性 Git 操作仍遵循当前请求及仓库规则。MCP 则提供实时数据或受控动作，并继续受各用户自己的认证和服务端权限约束。
+
+rebuild 后启动一个新的 Codex 会话，再用以下命令核对实际安装状态：
+
+```nu
+ls -l ~/.agents/skills | select name target
+codex mcp list
+codex-improve-exec --help
+```
+
+在 Codex TUI 中使用 `/skills` 查看当前会话识别到的 system、user 和 repo Skills，使用 `/plugins` 查看已安装并启用的 plugins。Skill 更新后若当前会话没有识别到，应重新启动 Codex。
 
 ### 扩展自己的 Codex 能力
 
 普通用户没有 root 权限也可以扩展自己的 Codex 能力。OpenAI 官方文档对 [AGENTS.md](https://developers.openai.com/codex/guides/agents-md)、[skills](https://developers.openai.com/codex/skills)、[MCP](https://developers.openai.com/codex/mcp) 和 [`config.toml`](https://developers.openai.com/codex/config-basic) 有更完整说明；在 `116` 上要区分个人配置和全员共享配置：
 
 - 项目级指令：在自己的项目仓库放置 `AGENTS.md`。Codex 进入该项目时会读取它，适合记录项目约定、测试命令、代码风格和部署边界。
-- 个人 skill：把 skill 放到 `~/.agents/skills/<skill-name>/SKILL.md`，或在 Codex 中使用系统自带的 `$skill-installer` 从 GitHub 安装。之后可通过 `$skill-name` 显式触发；description 写得足够明确时，Codex 也可能按任务自动触发。
-- 个人 MCP：用 `codex mcp` 添加，或在 `~/.codex/config.toml` 里新增自己的 `[mcp_servers.<name>]`。命令可以指向用户 home、项目目录或用户可执行的 Nix profile。不要覆盖系统管理的 `github`、`context7` 和 `github@openai-curated` 配置；下一次 Home Manager activation 会继续维护这些 managed keys。
+- 项目或个人 Skill：项目专用 Skill 放到仓库的 `.agents/skills/<skill-name>/SKILL.md`；跨仓库自用的 Skill 放到 `~/.agents/skills/<skill-name>/SKILL.md`，也可以用系统自带的 `$skill-installer` 从 GitHub 安装。之后可通过 `$skill-name` 显式触发；description 与任务匹配时，Codex 也可能隐式触发。避免与全局 Skill 使用相同的 `name`，同名 Skill 不会自动合并。
+- 项目 MCP：在受信任仓库的 `.codex/config.toml` 中增加 `[mcp_servers.<name>]`，把只服务该项目的命令和 endpoint 留在项目范围。Codex 不会为 untrusted project 加载这层配置。
+- 个人 MCP 试验：`codex mcp` 和 `~/.codex/config.toml` 可以用于临时验证，但 `116` 的用户配置由 Home Manager 生成，下一次 activation 可能覆盖手工改动。需要跨仓库长期保留的个人 MCP，应提交 per-user 声明式配置；不要覆盖系统管理的 `github`、`context7`、`context7_auth` 和 `github@openai-curated`。
 - 全员共享能力：如果某个 skill、MCP 或全局指令应该给所有 headless dev 用户使用，应提交 PR 修改 upstream/downstream 声明式配置，再由运维用户 rebuild。
 
 ### 用 Improve 审查和改进代码库

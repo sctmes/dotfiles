@@ -61,6 +61,31 @@ advisor 不会把第一版草稿直接交给 executor。`plan` 和 `review-plan`
 
 如果实现需要改变仓库既有的 CI、测试政策、门控规则、发布策略或兼容边界，advisor 必须解释影响并以 `BLOCKED` 等待批准，不能把这类变化作为附带修改自动纳入范围。
 
+每个新计划还会记录：
+
+- Spark、standard 或 deep executor lane，以及选择该 lane 的证据；
+- 项目实际使用的 execution launcher，例如 `nix develop --command`；
+- 在启动 executor 前必须通过的无副作用 probes，例如工具版本或配置求值；
+- 初始执行受预算或绝对超时影响时，可以独立收尾的一到三个 recovery seams。
+
+Improve 不根据仓库语言猜测工具链，也不会把 Cargo、Node、Python 等全部塞进 executor。advisor 必须从仓库说明、CI、devShell 和实测命令中确定入口；没有项目级 probe 时也要在计划中说明原因。
+
+## 执行环境预检与恢复
+
+当前生成的 Improve Skill 使用 `1.0.0-codex.13` 环境合同。这个版本号用于 runner 校验计划和 dossier，普通用户不需要把它写进对话。
+
+runner 创建或复用独立 worktree 后，会在与 executor 相同的 launcher 环境中依次运行计划声明的 probes，再复核候选树未被预检修改。全部通过后才启动模型，因此“主会话能找到工具”不再被当成“executor 一定能找到工具”的证据。
+
+如果 probe 命令不存在、超时或返回非零，并且候选树没有变化：
+
+- 结果是 `environment_preflight_failed`，executor 模型没有启动；
+- 这次失败不消耗 initial recovery 或代码 revision 次数；
+- runner 保留同一 worktree、候选身份、私有日志和一次性 resume manifest；
+- 用户确认环境已经修复后，当前会话可以恢复同一次执行；
+- 一次 resume 后 preflight 仍然失败时转为 `BLOCKED`，不会自动重试或换 lane。
+
+如果 launcher 或 probe 修改了候选树，runner 会以不可恢复的 preflight mutation 停止。resume 也不能修改原 lane、计划或环境合同；合同本身写错时必须回到 planning，而不是借恢复过程偷换执行语义。普通用户只需描述环境已经如何修复，不需要直接操作内部 manifest。
+
 ## 隔离执行
 
 `$improve execute <计划文件>` 会从当前 Git `HEAD` 创建独立 branch 和 worktree。worktree 是同一个 Git 仓库的独立工作目录，executor 只能在其中修改计划允许的路径。
@@ -99,7 +124,8 @@ Improve 分开记录三件事，避免把“代码已经正确实现”和“用
   -> advisor 只读审查并给出候选问题
   -> 你确认要处理的方向
   -> advisor 将计划收敛为 READY 或 BLOCKED
-  -> executor 在独立 worktree 中修改和验证
+  -> runner 在独立 worktree 中预检计划声明的执行环境
+  -> executor 在选定 lane 中修改和验证
   -> 当前会话核对完整 diff 与 Engineering contract
   -> 按风险触发 correctness / elegance 独立复核
   -> 当前会话验证 reviewer 结论并给出实现审查结果
@@ -110,13 +136,14 @@ Improve 分开记录三件事，避免把“代码已经正确实现”和“用
 
 ## 预定义 agents
 
-这里的 agent 是预先设置好的 Codex profile。每个 profile 固定模型、reasoning effort、读写权限和是否允许继续派生 agent。普通用户不需要手动选择，Improve 会根据工作阶段和风险自动调用。
+这里的 agent 是预先设置好的 Codex profile。每个 profile 固定模型、reasoning effort、读写权限和是否允许继续派生 agent。普通用户不需要直接运行 profile；advisor 会在计划中记录 lane 和 routing evidence，当前会话按该记录显式派发，不会让 runner 猜测或自动 fallback。
 
 | Agent / profile | 模型与 effort | 权限 | 负责什么 |
 | --- | --- | --- | --- |
 | 当前 Codex 会话（advisor） | 沿用当前会话设置 | 审查和规划阶段不修改源代码；只写计划 artifact（通常是 Markdown 计划文件） | 理解仓库、筛选问题、与用户确认方向、收敛计划，并在执行后负责实现审查与外部验收交接。 |
 | `improve-scout` | `gpt-5.6-luna` + `high` | 只读 | 在大型审查中分区寻找候选问题；必要时围绕明确的外部实践问题收集一手社区证据。它只提供线索，不修改代码或作最终裁决。 |
 | `improve-executor` | `gpt-5.6-sol` + `medium` | 仅可写独立 worktree | 默认执行器；按照 `READY` 计划修改代码、运行检查并留下未提交 diff。 |
+| `improve-executor-spark` | `gpt-5.3-codex-spark` + `high` | 仅可写独立 worktree | 处理边界明确、风险较低、可以用短反馈循环验证的独立工作单元；只有计划满足 Spark eligibility 并记录证据时才会使用。失败不会自动回退到 standard 或 deep。 |
 | `improve-executor-deep` | `gpt-5.6-sol` + `xhigh` | 仅可写独立 worktree | 处理技术不确定性高、跨模块或需要更深入推理的计划；更慢且 token 消耗更高，不作为默认选择。 |
 | `improve-reviewer` | `gpt-5.6-sol` + `high` | 只读 | 独立检查 correctness、安全、回归、测试以及计划和 Engineering contract 是否落实。 |
 | `improve-elegance-reviewer` | `gpt-5.6-sol` + `high` | 只读 | 独立检查实现是否引入不必要复杂度、抽象、兼容层或 speculative flexibility。 |
@@ -125,7 +152,7 @@ Improve 分开记录三件事，避免把“代码已经正确实现”和“用
 
 Improve 会在内部使用两个命令：
 
-- `codex-improve-exec` 创建持久 branch/worktree，并启动普通或 deep executor。
+- `codex-improve-exec` 创建或复用持久 branch/worktree，验证 execution environment，启动 Spark、standard 或 deep executor，并保存可恢复的 preflight artifact。
 - `codex-improve-review` 用对应的只读 profile 运行 correctness 或 elegance review，保存结构化结果和诊断信息。
 
 普通用户通常不需要直接调用它们，只需在 Codex 对话中使用 `$improve ...`。
