@@ -88,6 +88,7 @@ let
         (.["proxy-groups"] // []) as $groups |
         [
           (($providers | to_entries | map(select(.key == "WestWorld")) | length) == 1),
+          (($providers | to_entries | map(select(.key == "YToo")) | length) == 1),
           (($groups | map(select(.name == "Proxy")) | length) == 1),
           (($groups | map(select(.name == "WestWorld Auto")) | length) == 1),
           (($groups | map(select(.name == "YToo Backup")) | length) <= 1)
@@ -148,13 +149,15 @@ let
           ($groups | map(select(.name == "YToo Backup"))) as $backup |
           [
             (($proxy | length) == 1),
-            ($proxy[0].type == "select"),
-            (($proxy[0].proxies | length) == 1),
+            ($proxy[0].type == "fallback"),
+            (($proxy[0].proxies | length) == 2),
             ($proxy[0].proxies[0] == "WestWorld Auto"),
+            ($proxy[0].proxies[1] == "YToo Backup"),
+            ($proxy[0].url == "https://www.gstatic.com/generate_204"),
+            ($proxy[0].interval == 300),
+            ($proxy[0].timeout == 8000),
             ($proxy[0] | (
               has("use")
-              or has("url")
-              or has("interval")
               or has("tolerance")
               or has("lazy")
               or has("filter")
@@ -166,12 +169,26 @@ let
             ($westworld[0].use[0] == "WestWorld"),
             ($westworld[0].url == "https://www.gstatic.com/generate_204"),
             ($westworld[0].interval == 1800),
-            ($westworld[0].tolerance == 0),
+            ($westworld[0].timeout == 8000),
+            ($westworld[0].tolerance == 100),
             ($westworld[0] | has("lazy")),
-            ($westworld[0].lazy == false),
+            ($westworld[0].lazy == true),
             ($westworld[0].filter == "(?i)(日本|🇯🇵|\\bJP\\b)"),
             ($westworld[0] | (has("proxies") or has("exclude-filter")) | not),
-            (($backup | length) == 0)
+            (($backup | length) == 1),
+            ($backup[0].type == "select"),
+            (($backup[0].use | length) == 1),
+            ($backup[0].use[0] == "YToo"),
+            ($backup[0] | (
+              has("proxies")
+              or has("url")
+              or has("interval")
+              or has("timeout")
+              or has("tolerance")
+              or has("lazy")
+              or has("filter")
+              or has("exclude-filter")
+            ) | not)
           ] | all
         ' "$1" >/dev/null 2>&1
       }
@@ -204,21 +221,30 @@ let
 
       if ! yq eval --output-format=yaml '
         (.["proxy-groups"][] | select(.name == "Proxy")) |= (
-          .type = "select"
-          | .proxies = ["WestWorld Auto"]
-          | del(.use, .url, .interval, .tolerance, .lazy, .filter, .["exclude-filter"])
+          .type = "fallback"
+          | .proxies = ["WestWorld Auto", "YToo Backup"]
+          | .url = "https://www.gstatic.com/generate_204"
+          | .interval = 300
+          | .timeout = 8000
+          | del(.use, .tolerance, .lazy, .filter, .["exclude-filter"])
         )
         | (.["proxy-groups"][] | select(.name == "WestWorld Auto")) |= (
           .type = "url-test"
           | .use = ["WestWorld"]
           | .url = "https://www.gstatic.com/generate_204"
           | .interval = 1800
-          | .tolerance = 0
-          | .lazy = false
+          | .timeout = 8000
+          | .tolerance = 100
+          | .lazy = true
           | .filter = "(?i)(日本|🇯🇵|\\bJP\\b)"
           | del(.proxies, .["exclude-filter"])
         )
-        | .["proxy-groups"] |= map(select(.name != "YToo Backup"))
+        | .["proxy-groups"] = (.["proxy-groups"] | map(select(.name != "YToo Backup")))
+        | .["proxy-groups"] += [{
+          "name": "YToo Backup",
+          "type": "select",
+          "use": ["YToo"]
+        }]
       ' "$config_path" > "$tmp_file" 2>/dev/null; then
         fail 'error: cannot transform routing policy'
       fi

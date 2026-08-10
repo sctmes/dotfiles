@@ -163,7 +163,7 @@ nu ./scripts/install-116.nu root@192.168.0.116 --proxy http://<lan-proxy>:<port>
    ```
 
    `mihomo-config-bootstrap` 是 `RemainAfterExit` 的 oneshot。导入运行配置后，即使目标 generation 没有变化，也要显式重跑该 unit 才能保证执行归一化。
-5. 确认归一化结果：`Proxy` 只包含 `WestWorld Auto`；`WestWorld Auto` 每 1800 秒测试一次 `WestWorld` provider 中严格匹配日本的节点，使用 `tolerance: 0` 和 `lazy: false`；`YToo Backup` 代理组已移除；`YToo` provider 保留定义，但不参与路由。
+5. 确认归一化结果：`Proxy` 是 `fallback`，依次包含 `WestWorld Auto` 和 `YToo Backup`；`WestWorld Auto` 每 1800 秒测试一次 `WestWorld` provider 中严格匹配日本的节点，使用 `timeout: 8000`、`tolerance: 100` 和 `lazy: true`；`YToo Backup` 是 `select` 组，使用 `YToo` provider 作为后备，不参与自动节点测速。
 6. 验证配置并重启 Mihomo：
 
    ```nu
