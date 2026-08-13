@@ -4,18 +4,18 @@
 
 ## headless 开发环境
 
-`116` 通过本仓库锁定的 `upstream` flake input 继承 headless 开发工具集，包括 `gh`、Codex、Nushell、Helix、Yazi 和 ripgrep。下表记录当前 upstream 管理的共享 Codex 能力及其触发边界；Codex release 自带且不由 dotfiles 管理的 system Skills 也单独列出，避免混淆两种来源。
+`116` 通过本仓库锁定的 `upstream` flake input 继承 headless 开发工具集，包括 `gh`、Codex、Nushell、Helix、Yazi 和 ripgrep。共享 Codex 环境以 `Codex Base` 为权威来源，`bioinformatist/dotfiles` 负责兼容导出，本仓库再通过 `upstream` 继承。下表记录当前 upstream 管理的共享 Codex 能力及其触发边界；Codex release 自带且不由 dotfiles 管理的 system Skills 也单独列出，避免混淆两种来源。
 
 upstream 合并、下游更新 `flake.lock` 和 `116` 完成 rebuild 是三个不同阶段。三步全部完成后，新能力才会出现在服务器上的新 Codex 会话中；不能只根据 upstream PR 已合并就判断已经部署。
 
 | 名称 | 类型 | 触发条件 | 功能 |
 | --- | --- | --- | --- |
-| [全局 `AGENTS.md`](https://github.com/bioinformatist/dotfiles/blob/main/home/programs/codex/default.nix) | 全局指令 | Codex 启动后自动读取生成的 `~/.codex/AGENTS.md`。 | 补充跨仓库工作偏好：采用最小但完整的改动、让建议和术语解释具备充分上下文、遵循 Git/Nix 约定，并执行 Context7 fallback 与 per-user secret routing 等通用 capability routing。 |
+| [全局 `AGENTS.md`](https://github.com/bioinformatist/codex-base/blob/3ec492f90733e9070325711440ce52bfcff6c6c5/config/AGENTS.md) | 全局指令 | Codex 启动后自动读取生成的 `~/.codex/AGENTS.md`。 | 补充跨仓库工作偏好：采用最小但完整的改动、让建议和术语解释具备充分上下文、遵循 Git/Nix 约定，并执行 Context7 fallback 与 per-user secret routing 等通用 capability routing。 |
 | [OpenAI system Skills](https://developers.openai.com/codex/skills) | Codex 内置 Skills | 随当前 Codex release 提供；任务匹配 description 或用户用 `$skill-name` 显式要求时加载。 | 提供 `$skill-creator`、`$skill-installer` 等通用能力。具体清单不由 dotfiles 固定，应在当前会话用 `/skills` 查看。 |
 | [GitHub MCP](https://github.com/github/github-mcp-server) | MCP | Codex 注册 `github` MCP；处理 GitHub repo、issue、PR、review、CI 相关任务时调用。 | 通过用户自己的 GitHub token 访问 GitHub context、issues、pull requests、repos、users 和 orgs。token 配置见下方“GitHub 认证”。 |
 | [GitHub curated plugin](https://github.com/openai/plugins/tree/main/plugins/github) | Skill plugin | Codex 启用 `github@openai-curated`；处理 GitHub issue、PR、review、CI 或发布本地改动时可能触发。 | 在 GitHub MCP 之上提供更高层工作流 skills，例如处理 PR review comments、修复 GitHub Actions CI、梳理 repo/issue/PR 上下文和发布本地修改。 |
 | [Context7 MCP](https://github.com/upstash/context7) | MCP | Codex 注册匿名 `context7` MCP；涉及库、框架、SDK、API、CLI 或云服务当前文档时使用。 | 默认先用匿名 Context7 拉取较新的项目文档；登记了个人 API key 的用户还会得到 `context7_auth` fallback，匿名额度不可用时再使用自己的认证额度。 |
-| [`improve`](https://github.com/shadcn/improve/tree/03369ee6d7cafbfcecc4346539b05b3dc0a603bb/skills/improve) | Skill + executors/reviewers | 想系统检查代码库、收敛实施计划并隔离执行时，在 Codex 对话中使用 `$improve`。 | advisor 把计划收敛为 `READY` 或 `BLOCKED`，声明执行环境和 Spark/standard/deep lane；runner 在独立 worktree 预检并执行，之后按风险触发 correctness 或 elegance 复核。完整用法见 [Improve 使用说明](codex-improve.md)。 |
+| [`improve`](https://github.com/bioinformatist/codex-base/blob/3ec492f90733e9070325711440ce52bfcff6c6c5/src/improve/SKILL.md) | Skill + executors/reviewers | 想系统检查代码库、收敛实施计划并隔离执行时，在 Codex 对话中使用 `$improve`。 | advisor 把计划收敛为 `READY` 或 `BLOCKED`，声明执行环境和 Spark/standard/deep lane；runner 在独立 worktree 预检并执行，之后按风险触发 correctness 或 elegance 复核。完整用法见 [Improve 使用说明](codex-improve.md)。 |
 | [Playwright CLI skill](https://github.com/microsoft/playwright-cli/tree/v0.1.17/skills/playwright-cli) | Skill | 浏览器自动化、页面预览、截图、交互验证或 Playwright 相关任务；也可显式要求 `$playwright-cli`。 | 使用 Playwright CLI 做 headless-first 的页面检查和自动化，默认采用 snapshot/screenshot；只有用户明确要求且存在图形会话时才使用交互 annotation。 |
 | [stop-slop](https://github.com/hardikpandya/stop-slop/tree/8da1f030185bdfe8471220585162991eaeb970e9) | Skill | 英文 PR、issue、release notes、README/docs、公开评论等 publishable prose 的最终润色；也可显式要求 `$stop-slop`。 | 在不改技术事实、命令、日志、标识符和有用不确定性的前提下，去掉公式化 AI 文风。 |
 | [Ponytail Review](https://github.com/DietrichGebert/ponytail/tree/v4.8.3/skills/ponytail-review) | Skill | 用户明确要求 over-engineering review、simplify review、what can we delete，或显式 `$ponytail-review`。 | 只审复杂度：指出可删除的 speculative abstraction、重复造轮子、无用依赖和死弹性。 |
