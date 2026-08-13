@@ -72,9 +72,15 @@ Improve 不根据仓库语言猜测工具链，也不会把 Cargo、Node、Pytho
 
 ## 执行环境预检与恢复
 
-当前生成的 Improve Skill 使用 `1.0.0-codex.13` 环境合同。这个版本号用于 runner 校验计划和 dossier，普通用户不需要把它写进对话。
+当前生成的 Improve Skill 使用 `1.0.0-codex.14` 环境合同。这个版本号用于 runner 校验计划和 dossier，普通用户不需要把它写进对话。
 
 runner 创建或复用独立 worktree 后，会在与 executor 相同的 launcher 环境中依次运行计划声明的 probes，再复核候选树未被预检修改。全部通过后才启动模型，因此“主会话能找到工具”不再被当成“executor 一定能找到工具”的证据。
+
+worktree 根目录下的 `.agents` 与 `.codex` 仍默认受保护。计划确实需要写入其中任一目录时，主会话必须先取得用户对具体目录的明确批准，再在每次 initial、`--next`、revision 或 recovery 调用中显式传入对应的 `--allow-protected-path .agents` 或 `--allow-protected-path .codex`；授权不会从计划正文推断，也不会跨调用自动沿用。
+
+获准的目录根必须尚不存在，或是已存在的物理目录。目录根本身若是符号链接（包括悬空链接）或其他非目录节点，preflight 会直接拒绝；`.git` 永不在可授权范围内。物理目录内部的符号链接仍受 executor sandbox 约束。
+
+使用 `.14` 合同的 Improve 状态根、worktree 根和具体 worktree 会在启动前校验当前用户所有权并设为 `0700`。preflight 失败后的 resume 只接受已认证 manifest 中记录的环境和授权集合，不能临时覆盖。
 
 如果 probe 命令不存在、超时或返回非零，并且候选树没有变化：
 
@@ -113,7 +119,7 @@ Improve 分开记录三件事，避免把“代码已经正确实现”和“用
 - Checkpoint：当前改动还没有恢复点、已有可恢复目标，或已经集成；
 - External acceptance：不需要外部验收、等待验收、已经通过或已经失败。
 
-独立 reviewer 只判断实现和 agent 可获得的证据。需要观察实体机 UI、操作真实硬件或等待外部系统时，尚未执行的验收不会让一个正确实现被判为 `BLOCK`。主会话会先完成所有 implementation gates，再准备一个精确 checkpoint，例如持久 worktree 与 diff、commit、branch、PR 或 deployment ID。涉及 commit、push、部署或合并时，仍会先按仓库规则请求批准。
+独立 reviewer 只判断实现和 agent 可获得的证据。需要观察实体机 UI、操作真实硬件或等待外部系统时，尚未执行的验收不会让一个正确实现被判为 `BLOCK`。主会话会先完成所有 implementation gates，并在得到明确批准后，才可对精确已审阅树创建本地 checkpoint。这个 checkpoint 只建立可恢复的持久身份，不授权 push、PR、merge、deploy、activate、cleanup 或环境销毁；每个后续边界仍需按仓库规则分别批准。
 
 只有实现已批准、checkpoint 可以恢复，而且验收已经可以针对该目标执行时，计划才进入 `ACCEPTANCE PENDING`。此时可以退出终端、切换机器或稍后再回复；下一次对话会从计划和 checkpoint 恢复，而不是依赖聊天记忆。验收失败若证明实现有缺陷，任务回到实现阶段；如果只是代理、网络或其他无关环境故障，则保留待验收状态并记录证据。
 
