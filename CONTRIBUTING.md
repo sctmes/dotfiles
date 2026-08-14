@@ -29,7 +29,7 @@ maint-switch
 
 - upstream-owned 工具、Codex release pin、Codex skills/MCP、headless 开发工具声明和维护门控策略来自 `bioinformatist/dotfiles`。这些更新先进入 upstream，再通过更新本仓库的 `upstream` flake input 被 `116` 消费。
 - `116` 的基础 `nixpkgs`、`home-manager`、`sops-nix`、`disko`、`impermanence` 和 downstream 服务配置由本仓库自己的 flake lock 管理。
-- public Yazelix Nova `main` 是 `116` 上仅供 `ysun` 使用的 downstream 实验。Home Manager 安装适合 SSH/headless 环境的 `yazelix-no-mars`，入口是 `yzx enter`；它不属于 upstream 通用配置，也不会提供给 `zky` 或 `wangrongfeng`。
+- `Yazelix/nova/main` 是 Yazelix Nova 的 canonical source，也是 `116` 上仅供 `ysun` 使用的 downstream 实验。Home Manager 从锁定的 `main` 安装适合 SSH/headless 环境的 `yazelix-no-mars`，入口是 `yzx enter`。`ysun` 作为手动激活的 headless canary，将它用于日常 SSH 工作并向 Nova 反馈；它不属于 upstream 通用配置，也不会提供给 `zky` 或 `wangrongfeng`。
 
 `upstream` input 由 Renovate 每 4 小时检查一次。`yazelix` 每天在 UTC
 16:00–19:59（Asia/Shanghai 次日 00:00–03:59）的 eligibility window 内检查。
@@ -39,7 +39,8 @@ automerge。gate 会对 public Yazelix 做真实求值；只有迁移 PR 的 leg
 继续禁用自动更新。
 
 Renovate automerge 只合并 lock PR，绝不会 build、rebuild 或部署 `116`。真正的构建
-和切换仍由运维用户从已审查的干净 `main` 在目标机器上执行 `maint-switch`。
+和切换仍由运维用户从已审查的干净 `main` 在目标机器上手动执行 `maint-switch`；
+canary 激活权不会交给 Renovate 或 CI。
 
 更新 upstream 时只更新对应 flake input：
 
@@ -64,13 +65,19 @@ Hyprland、GCC/Rust toolchain、Chromium/Electron 等重组件加入 allowlist�
 网络问题需要按路径拆分：Nix cache、GitHub release/direct fetch、npm registry 或
 node-gyp、Cargo registry 和运行时代理不是同一个问题。
 
-首次从 Yazelix Next 迁移时，普通用户不能让 Nix daemon 信任临时指定的 Cachix。
-合并并检查干净 `main` 后，由 root 先显式 bootstrap 目标 closure：
+只有当目标机器当前运行的 Nix daemon 尚未信任声明式配置中的 Yazelix Cachix 时，
+普通用户才无法使用临时指定的 Cachix。合并并检查干净 `main` 后，由 root 条件式地
+bootstrap 目标 closure：
 
 ```nu
 sudo nix build --no-link --print-out-paths --option extra-substituters https://yazelix.cachix.org --option extra-trusted-public-keys 'yazelix.cachix.org-1:ZgxIjQvaP0VTWL8Racx27mpUNzDJ97xC2y7QWYjmGNM=' .#nixosConfigurations.116.config.system.build.toplevel
 maint-switch --no-pull
 ```
+
+如果 live daemon 已信任该 Cachix，则跳过显式 bootstrap，仍由运维用户在审查后手动
+执行 `maint-switch --no-pull`。`yazelix-no-mars` 当前会报告 Stable runtime channel
+identity，因此针对 `main` 的 Nova 报告必须同时附上 `flake.lock` 中精确的锁定 revision
+和经过脱敏的复现上下文；可用 `open flake.lock | get nodes.yazelix.locked.rev` 读取 revision。
 
 后续 Yazelix 更新以 Renovate PR、maintenance gate 和对应 `flake.lock` 变更为审查及
 回退边界；需要回退时恢复上一份已审查的 lock/main 状态，再由运维用户构建和切换。
