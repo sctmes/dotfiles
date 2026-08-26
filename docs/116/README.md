@@ -102,9 +102,9 @@ maint-switch
 
 ### Yazelix Nova
 
-`116` 只为 `ysun` 从 `Yazelix/nova/main` 安装适合 SSH/headless 环境的 `yazelix-no-mars`，入口是 `yzx enter`。`ysun` 将它作为日常 SSH 工作的 headless canary，但每次更新仍由运维用户审查后手动激活；`zky`、`wangrongfeng` 和 upstream 通用配置不会获得 Yazelix 或通用 Zellij。Renovate、maintenance gate、条件式 Cachix bootstrap、手动应用和 lock-based rollback 的责任边界见 [CONTRIBUTING.md](../../CONTRIBUTING.md)。
+`116` 只为 `ysun` 从 `Yazelix/nova/edge` 安装适合 SSH/headless 环境的 `yazelix-no-rio`，入口是 `yzx enter`。`ysun` 将它作为日常 SSH 工作的 edge canary，但每次更新仍由运维用户审查后手动激活；`zky`、`wangrongfeng` 和 upstream 通用配置不会获得 Yazelix 或通用 Zellij。Renovate、maintenance gate、条件式 Cachix bootstrap、手动应用和 lock-based rollback 的责任边界见 [CONTRIBUTING.md](../../CONTRIBUTING.md)。
 
-Nova 管理的 Atuin 只在本机记录历史并保留 `Ctrl+r` 搜索，不登录账户或同步；Up-arrow 仍使用 shell 原生历史。进入敏感目录工作前应先检查 history filters。Carapace 为 Nova 管理的 Nushell 提供外部命令补全，本身不保存命令历史。Ratconfig 是 `yzx config` 的 UI 和配置校验层；当前 downstream Home Manager 只选择 `yazelix-no-mars` package，不接管 Nova 的详细 overrides。
+Nova 管理的 Atuin 只在本机记录历史并保留 `Ctrl+r` 搜索，不登录账户或同步；Up-arrow 仍使用 shell 原生历史。进入敏感目录工作前应先检查 history filters。Carapace 为 Nova 管理的 Nushell 提供外部命令补全，本身不保存命令历史。Ratconfig 是 `yzx config` 的 UI 和配置校验层；当前 downstream Home Manager 只选择 `yazelix-no-rio` package，不接管 Nova 的详细 overrides。
 
 激活后先运行：
 
@@ -116,7 +116,7 @@ yzx doctor
 yzx enter
 ```
 
-在交互会话中至少检查 managed Nushell 启动、Carapace Tab 补全、Atuin `Ctrl+r` 与原生 Up-arrow、`yzx config` 编辑和 reset、managed Helix、Yazi、LazyGit 与 agent popups、session 创建/attach/exit，以及 SSH 断线行为；同时确认 Atuin 没有 account 或 sync 配置。`yazelix-no-mars` 当前会显示 Stable runtime channel identity，因此向 Nova 报告 `main` 问题时必须附上 `open flake.lock | get nodes.yazelix.locked.rev` 得到的精确锁定 revision，以及经过脱敏的 `yzx status --json`、`yzx doctor` 和复现上下文。
+在交互会话中至少检查 managed Nushell 启动、Carapace Tab 补全、Atuin `Ctrl+r` 与原生 Up-arrow、`yzx config` 编辑和 reset、managed Helix、Yazi、LazyGit 与 agent popups、session 创建/attach/exit，以及 SSH 断线行为；同时确认 Atuin 没有 account 或 sync 配置。`yazelix-no-rio` 作为 capability variant 当前不会获得完整 `yazelix-edge` 的 channel-qualified identity，因此向 Nova 报告 `edge` 问题时必须附上 `open flake.lock | get nodes.yazelix.locked.rev` 得到的精确锁定 revision，以及经过脱敏的 `yzx status --json`、`yzx doctor` 和复现上下文。
 
 ## 主要服务
 

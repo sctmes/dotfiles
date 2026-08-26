@@ -29,7 +29,7 @@
       "addLabels": ["policy-upstream"]
     },
     {
-      "description": "Track Yazelix Nova main for ysun through the maintenance gate.",
+      "description": "Track Yazelix Nova edge for ysun through the maintenance gate.",
       "matchManagers": ["nix"],
       "matchDepNames": ["yazelix"],
       "schedule": ["* 16-19 * * *"],
@@ -38,7 +38,7 @@
       "semanticCommits": "enabled",
       "semanticCommitType": "chore",
       "semanticCommitScope": "maint",
-      "commitMessageTopic": "Yazelix Nova main",
+      "commitMessageTopic": "Yazelix Nova edge",
       "addLabels": ["experimental-yazelix"]
     },
     {
