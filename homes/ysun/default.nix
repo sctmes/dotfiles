@@ -22,7 +22,7 @@
   programs.yazelix = {
     enable = true;
     package =
-      inputs.yazelix.packages.${pkgs.stdenv.hostPlatform.system}.yazelix-no-mars;
+      inputs.yazelix.packages.${pkgs.stdenv.hostPlatform.system}.yazelix-no-rio;
   };
 
   dotfiles.maint = {
