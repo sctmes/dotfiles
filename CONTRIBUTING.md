@@ -33,14 +33,15 @@ maint-switch
 
 `upstream` input 由 Renovate 每 4 小时检查一次。`yazelix` 每天在 UTC
 16:00–19:59（Asia/Shanghai 次日 00:00–03:59）的 eligibility window 内检查。
-只有这两个 input 可以自动更新；Yazelix PR 通过现有 maintenance gate 后可以
-automerge。gate 会对 public Yazelix 做真实求值；只有迁移 PR 的 legacy base
-仍声明 `yazelix-next` 时才使用最小临时 stub。其他 downstream-owned inputs
-继续禁用自动更新。
+只有这两个 input 可以自动更新。maintenance gate 会对 public Yazelix 做真实求值；
+只有迁移 PR 的 legacy base 仍声明 `yazelix-next` 时才使用最小临时 stub。这个 leaf
+仓库不把 gate 设为 merge 所需的 required check，因此合并可能早于 CI 完成；其他
+downstream-owned inputs 继续禁用自动更新。
 
 Renovate automerge 只合并 lock PR，绝不会 build、rebuild 或部署 `116`。真正的构建
-和切换仍由运维用户从已审查的干净 `main` 在目标机器上手动执行 `maint-switch`；
-canary 激活权不会交给 Renovate 或 CI。
+和切换仍由运维用户从已审查的干净 `main` 在目标机器上手动执行 `maint-switch`。
+激活前必须确认对应变更已有成功的 maintenance gate 证据；canary 激活权不会交给
+Renovate 或 CI。
 
 更新 upstream 时只更新对应 flake input：
 
@@ -81,7 +82,7 @@ maint-switch --no-pull
 
 后续 Yazelix 更新以 Renovate PR、maintenance gate 和对应 `flake.lock` 变更为审查及
 回退边界；需要回退时恢复上一份已审查的 lock/main 状态，再由运维用户构建和切换。
-不要绕过 gate，也不要把自动合并理解为自动部署。
+部署时不要绕过 gate，也不要把自动合并理解为自动部署。
 
 ## 责任边界
 
