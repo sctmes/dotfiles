@@ -133,11 +133,11 @@
         "stop-slop": "stop-slop"
       },
       "locked": {
-        "lastModified": 1788490289,
-        "narHash": "sha256-h8a9snJYjWbC5iWvzh/KBvjMnkkgMog3kVWxzt0dBL0=",
+        "lastModified": 1788688289,
+        "narHash": "sha256-ge+i9eYfp5gLBlRij7w7t4vBWPDrE8pFZzw6NUoVfD0=",
         "owner": "bioinformatist",
         "repo": "codex-base",
-        "rev": "25e0b2e434ae645b6bbb033da76a7cdf3aa5935b",
+        "rev": "52b9e4cc614749791b5d2e46d8c6bf8fd41592b0",
         "type": "github"
       },
       "original": {
@@ -149,16 +149,16 @@
     "codex-src": {
       "flake": false,
       "locked": {
-        "lastModified": 1788466237,
-        "narHash": "sha256-u7bp0B3MUuPIlk1QUKz267EGedjwMgTaoSNoYI5piLQ=",
+        "lastModified": 1788561664,
+        "narHash": "sha256-lHiDj5SodaM3mh8goMm6esfejeAT+Y3JJWrRnyj6sJo=",
         "owner": "openai",
         "repo": "codex",
-        "rev": "985641272869835d01d025ed2a218fbbce35fa9f",
+        "rev": "3d2ee51ca2d5db578f328aa75e20aa22c0197c9a",
         "type": "github"
       },
       "original": {
         "owner": "openai",
-        "ref": "rust-v0.153.1",
+        "ref": "rust-v0.153.4",
         "repo": "codex",
         "type": "github"
       }
@@ -1634,11 +1634,11 @@
         "swww": "swww"
       },
       "locked": {
-        "lastModified": 1788493756,
-        "narHash": "sha256-M7+LYf532sCAyG9eOyijjBvPRNbTYVQ/tv8QDEPf6f4=",
+        "lastModified": 1788688979,
+        "narHash": "sha256-j89DVkf4Gn4+vFK7erx8IvFj4IDYxYi18wl26c417ow=",
         "owner": "bioinformatist",
         "repo": "dotfiles",
-        "rev": "3ec41903383086f8e199919b25b76d5dde1a2982",
+        "rev": "681945464afd8c2b60a9e4d781c21b83c1159a4b",
         "type": "github"
       },
       "original": {
