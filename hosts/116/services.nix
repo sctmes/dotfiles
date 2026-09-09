@@ -10,6 +10,7 @@ let
   labelStudioDataDir = "/var/lib/label-studio";
   labelStudioHost = "https://label.bigdick.live:2053";
   labelStudioDomain = "label.bigdick.live";
+  ssh116Domain = "ssh-116.bigdick.live";
   labelStudioAdminEmail = "ysun@sctmes.com";
   ddnsGoIpv6Regex = ".*:3e7c:3fff:fed3:88b7$";
   mihomoDir = "/etc/sctmes/116/mihomo";
@@ -383,6 +384,29 @@ in
               ipv6reg: "${ddnsGoIpv6Regex}"
               domains:
                 - "${labelStudioDomain}?proxied=true"
+            dns:
+              name: cloudflare
+              id: ""
+              secret: ${config.sops.placeholder."cloudflare-ddns-token"}
+            ttl: "1"
+          - name: cloudflare-ssh-116
+            ipv4:
+              enable: false
+              gettype: url
+              url: ""
+              netinterface: ""
+              cmd: ""
+              domains:
+                - ""
+            ipv6:
+              enable: true
+              gettype: netInterface
+              url: ""
+              netinterface: enp6s0
+              cmd: ""
+              ipv6reg: ".*::116$"
+              domains:
+                - "${ssh116Domain}?proxied=false"
             dns:
               name: cloudflare
               id: ""
