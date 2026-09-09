@@ -167,7 +167,19 @@ nu ./scripts/install-116.nu root@192.168.0.116 --proxy http://<lan-proxy>:<port>
 1. 用 `ysun` 登录。
 2. 克隆本仓库到 `/home/ysun/github.com/sctmes/dotfiles`。
 3. 打开 Mihomo 网页界面，导入或替换 `/persist/mihomo/config.yaml`。
-4. 应用仓库声明的系统配置，再显式重跑 Mihomo bootstrap unit：
+4. 在执行 `maint-switch` 前，先备份当前运行配置并记录上下文，保留 SSH 回退通道：
+
+   ```nu
+   let rollback_dir = (sudo mktemp -d /persist/mihomo/rollback-github.XXXXXX | str trim)
+   sudo cp --preserve=mode,ownership /persist/mihomo/config.yaml $"($rollback_dir)/config.yaml"
+   let deploy_commit = (git rev-parse HEAD)
+   let current_system = (readlink -f /run/current-system)
+   echo $"rollback_dir=($rollback_dir)"
+   echo $"deploy_commit=($deploy_commit)"
+   echo $"current_system=($current_system)"
+   ```
+
+5. 应用仓库声明的系统配置，再显式重跑 Mihomo bootstrap unit，确保 controller 仍使用 `sops` 的 `mihomo-controller-secret`，不在日志/终端打印 secret：
 
    ```nu
    nu --login -c 'maint-switch --no-pull --repo /home/ysun/github.com/sctmes/dotfiles'
@@ -175,35 +187,50 @@ nu ./scripts/install-116.nu root@192.168.0.116 --proxy http://<lan-proxy>:<port>
    ```
 
    `mihomo-config-bootstrap` 是 `RemainAfterExit` 的 oneshot。导入运行配置后，即使目标 generation 没有变化，也要显式重跑该 unit 才能保证执行归一化。
-5. 确认归一化结果：`Proxy` 是 `fallback`，依次包含 `WestWorld Auto` 和 `YToo Backup`；`WestWorld Auto` 每 1800 秒测试一次 `WestWorld` provider 中严格匹配日本的节点，使用 `timeout: 8000`、`tolerance: 100` 和 `lazy: true`；`YToo Backup` 是 `select` 组，使用 `YToo` provider 作为后备，不参与自动节点测速。
-6. 验证配置并重启 Mihomo：
+6. 确认归一化目标：
+
+   - `Proxy` 仍是依次包含 `WestWorld Auto` 与 `YToo Backup` 的 `fallback`，沿用 gstatic URL、300秒间隔和8000ms超时。
+   - `WestWorld Auto` 只选 `WestWorld` 中严格匹配日本的节点，以 `https://github.com/robots.txt`、`expected-status: 200` 测速；保留1800秒间隔、8000ms超时、`tolerance: 100` 和 `lazy: true`。
+   - `lazy: true` 允许跳过空闲周期，100ms容差减少频繁切换。此指标衡量 GitHub 请求延迟和可达性，不代表 API/raw/release 的全部质量。
+   - `YToo Backup` 保持使用 `YToo` provider 的 `select` 组，不参与自动节点测速。
+   - WestWorld provider 的 `health-check` 保持 enable=false/url=""/interval=0/timeout=8000/lazy=true；清空默认 URL，避免对全部节点进行默认探测，由日本组注册测速任务。
+7. 验证配置并重启 Mihomo：
 
    ```nu
    docker exec mihomo /mihomo -t -d /root/.config/mihomo -f /root/.config/mihomo/config.yaml
    sudo systemctl restart mihomo-compose.service
    ```
+8. 重启后验证：
 
-   不得使用 `PUT /configs?force=true`。重启会短暂删除并重新创建 `Meta` TUN 接口。
-7. 恢复模型文件到 `/var/lib/ai-serving/models`。
-8. 检查核心服务：
+   - 确认 Mihomo 服务与 SSH 正常。
+   - 通过 controller `/providers/proxies/WestWorld` 查看上述 GitHub URL 的新测速记录，日本节点至少一个成功；沿用 SOPS `mihomo-controller-secret` 认证，不打印 secret，不手动全部测速制造结果。
+   - 确认 `YToo Backup` 和外层 `Proxy` 仍符合第6项。下面 curl 的最终 HTTP 状态应为200，`CONNECT` 200不等于目标站点成功。
 
    ```nu
-   systemctl status mihomo-compose.service
-   systemctl status cloudflare-ddns-compose.service
-   systemctl status caddy.service
-   systemctl status label-studio-compose.service
+   curl --proxy http://127.0.0.1:7890 --noproxy "" --head --connect-timeout 5 --max-time 15 https://github.com/
    ```
 
-9. 如需回退 Mihomo 路由策略，按以下顺序操作：
+   不得使用 `PUT /configs?force=true`。重启会短暂删除并重新创建 `Meta` TUN 接口；无需额外等待 30 分钟，恢复后按正常使用观察。
+9. 恢复模型文件到 `/var/lib/ai-serving/models`。
+10. 检查核心服务：
 
-   1. 恢复此前已审核的仓库源码/检查点。
-   2. 从该版本运行 `nu --login -c 'maint-switch --no-pull --repo /home/ysun/github.com/sctmes/dotfiles'`。
-   3. 将 `/persist/mihomo/config.yaml.before-westworld-japan-policy` 恢复到 `/persist/mihomo/config.yaml`，并保留原 owner、group 和 mode。
-   4. 运行 `docker exec mihomo /mihomo -t -d /root/.config/mihomo -f /root/.config/mihomo/config.yaml` 验证配置。
-   5. 运行 `sudo systemctl restart mihomo-compose.service`。
-   6. 如果固定备份不存在，应先回退仓库源码，再恢复此前已知可用的运行时配置，并按相同顺序验证和重启。
+    ```nu
+    systemctl status mihomo-compose.service
+    systemctl status cloudflare-ddns-compose.service
+    systemctl status caddy.service
+    systemctl status label-studio-compose.service
+    ```
 
-10. 在 `https://label.bigdick.live:2053` 登录 Label Studio 并轮换初始密码。
+11. 如需回退 Mihomo 路由策略，按以下顺序操作：
+
+    1. 恢复此前已审核的仓库源码/检查点。
+    2. 从该版本运行 `nu --login -c 'maint-switch --no-pull --repo /home/ysun/github.com/sctmes/dotfiles'`。
+    3. 用本次备份（`$rollback_dir/config.yaml`）恢复运行时 `/persist/mihomo/config.yaml`，并保留 owner、group 和 mode，确认 `WestWorld Auto` 与 `YToo Backup` 已恢复到原策略。
+       固定文件 `/persist/mihomo/config.yaml.before-westworld-japan-policy` 可能过期，不直接作为本次默认回退来源。
+    4. 运行 `docker exec mihomo /mihomo -t -d /root/.config/mihomo -f /root/.config/mihomo/config.yaml` 验证配置。
+    5. 运行 `sudo systemctl restart mihomo-compose.service`。
+
+12. 在 `https://label.bigdick.live:2053` 登录 Label Studio 并轮换初始密码。
 
 ## GitHub 认证
 
