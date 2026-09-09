@@ -113,6 +113,7 @@ in
   // githubMcpTokenSecrets
   // context7ApiKeySecrets;
   home-manager.users = lib.recursiveUpdate githubMcpTokenHomeUsers context7ApiKeyHomeUsers;
+  services.tailscale.enable = true;
   services.openssh.settings = {
     PasswordAuthentication = true;
     KbdInteractiveAuthentication = false;
@@ -149,6 +150,7 @@ in
       "/var/lib/label-studio"
       "/var/lib/systemd/coredump"
       "/var/lib/sops-nix"
+      "/var/lib/tailscale"
     ];
     files = [
       "/etc/machine-id"
