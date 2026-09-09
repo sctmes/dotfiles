@@ -144,6 +144,7 @@ let
       target_state_matches() {
         yq eval -e '
           (.["proxy-groups"] // []) as $groups |
+          (.["proxy-providers"].WestWorld["health-check"] // {}) as $westworld_health_check |
           ($groups | map(select(.name == "Proxy"))) as $proxy |
           ($groups | map(select(.name == "WestWorld Auto"))) as $westworld |
           ($groups | map(select(.name == "YToo Backup"))) as $backup |
@@ -167,7 +168,8 @@ let
             ($westworld[0].type == "url-test"),
             (($westworld[0].use | length) == 1),
             ($westworld[0].use[0] == "WestWorld"),
-            ($westworld[0].url == "https://www.gstatic.com/generate_204"),
+            ($westworld[0].url == "https://github.com/robots.txt"),
+            ($westworld[0].["expected-status"] == 200),
             ($westworld[0].interval == 1800),
             ($westworld[0].timeout == 8000),
             ($westworld[0].tolerance == 100),
@@ -175,6 +177,11 @@ let
             ($westworld[0].lazy == true),
             ($westworld[0].filter == "(?i)(日本|🇯🇵|\\bJP\\b)"),
             ($westworld[0] | (has("proxies") or has("exclude-filter")) | not),
+            ($westworld_health_check.enable == false),
+            ($westworld_health_check.url == ""),
+            ($westworld_health_check.interval == 0),
+            ($westworld_health_check.timeout == 8000),
+            ($westworld_health_check.lazy == true),
             (($backup | length) == 1),
             ($backup[0].type == "select"),
             (($backup[0].use | length) == 1),
@@ -231,7 +238,8 @@ let
         | (.["proxy-groups"][] | select(.name == "WestWorld Auto")) |= (
           .type = "url-test"
           | .use = ["WestWorld"]
-          | .url = "https://www.gstatic.com/generate_204"
+          | .url = "https://github.com/robots.txt"
+          | .["expected-status"] = 200
           | .interval = 1800
           | .timeout = 8000
           | .tolerance = 100
@@ -239,6 +247,13 @@ let
           | .filter = "(?i)(日本|🇯🇵|\\bJP\\b)"
           | del(.proxies, .["exclude-filter"])
         )
+        | .["proxy-providers"].WestWorld["health-check"] = {
+          "enable": false,
+          "url": "",
+          "interval": 0,
+          "timeout": 8000,
+          "lazy": true
+        }
         | .["proxy-groups"] = (.["proxy-groups"] | map(select(.name != "YToo Backup")))
         | .["proxy-groups"] += [{
           "name": "YToo Backup",
