@@ -9,6 +9,7 @@
     "-config.kdl.drv",
     "-runtime_identity.json.drv",
     "-enforce-mihomo-routing-policy.drv",
+    "-yzx-zellij.drv",
     "-yazelix-no-rio.drv"
   ],
   "allowedDirectFetchMarkers": [
