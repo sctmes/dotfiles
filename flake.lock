@@ -133,11 +133,11 @@
         "stop-slop": "stop-slop"
       },
       "locked": {
-        "lastModified": 1788933265,
-        "narHash": "sha256-8FRBbT2hvB1K8yt1PCyvp9blVaTJGAl4Vkf8A10VKeU=",
+        "lastModified": 1789015923,
+        "narHash": "sha256-hZ615COw+S0Kbb9OF+7Srrt00V1ikJU+/arNSVXE85w=",
         "owner": "bioinformatist",
         "repo": "codex-base",
-        "rev": "1d8442e673553714850ef2a4448bcf5cf3217940",
+        "rev": "b29a42522b59f61151616bff98d548b7c02101be",
         "type": "github"
       },
       "original": {
@@ -149,16 +149,16 @@
     "codex-src": {
       "flake": false,
       "locked": {
-        "lastModified": 1788561664,
-        "narHash": "sha256-lHiDj5SodaM3mh8goMm6esfejeAT+Y3JJWrRnyj6sJo=",
+        "lastModified": 1788990228,
+        "narHash": "sha256-Nm+61N6YHxGhjLsm/giVSEg4QvJmIgWxyTQ1L89kpCs=",
         "owner": "openai",
         "repo": "codex",
-        "rev": "3d2ee51ca2d5db578f328aa75e20aa22c0197c9a",
+        "rev": "6b9826e3aa83b1a5947db50f4332cb9c65f1b340",
         "type": "github"
       },
       "original": {
         "owner": "openai",
-        "ref": "rust-v0.153.4",
+        "ref": "rust-v0.154.0",
         "repo": "codex",
         "type": "github"
       }
@@ -1071,15 +1071,15 @@
     },
     "nixpkgs_5": {
       "locked": {
-        "lastModified": 1783522502,
-        "narHash": "sha256-nFgG4gPQueCgP8LidXsdI2lYPrSwTcmDl6afcVn7F/U=",
-        "rev": "0bb7ec54c8483066ec9d7720e780a5caa71f8612",
+        "lastModified": 1788614874,
+        "narHash": "sha256-PRK1fSEiAcO29DkUoOlsVLGYRK3h1YKVr+qQJB0VcYQ=",
+        "rev": "c043004d1c6985732bcc1cbc5a9c9aecbbb4e0f0",
         "type": "tarball",
-        "url": "https://releases.nixos.org/nixos/unstable/nixos-26.11pre1031299.0bb7ec54c848/nixexprs.tar.xz"
+        "url": "https://releases.nixos.org/nixos/unstable/nixos-26.11pre1068089.c043004d1c69/nixexprs.tar.zst"
       },
       "original": {
         "type": "tarball",
-        "url": "https://channels.nixos.org/nixos-unstable/nixexprs.tar.xz"
+        "url": "https://channels.nixos.org/nixos-unstable/nixexprs.tar.zst"
       }
     },
     "nixpkgs_6": {
@@ -1135,11 +1135,11 @@
         "nixpkgs": "nixpkgs_5"
       },
       "locked": {
-        "lastModified": 1784257912,
-        "narHash": "sha256-gtwefTrgOhRoZVImkvKccqctx/dlC6Ai2wmmg1kbdX8=",
+        "lastModified": 1789001150,
+        "narHash": "sha256-5lk/xkuZ8Epf7gaYu2NuiHRSDiIqPxVS+ImrsX+ryGI=",
         "owner": "noctalia-dev",
         "repo": "noctalia",
-        "rev": "a336b7d1b9d5175af3dd222a4571fe3e51427211",
+        "rev": "8b0a3f61673123ee65e6eaab8b8cd8620034d690",
         "type": "github"
       },
       "original": {
@@ -1634,11 +1634,11 @@
         "swww": "swww"
       },
       "locked": {
-        "lastModified": 1788934677,
-        "narHash": "sha256-91c4lYYUIW8wkFqUcqvTNN4qGYTzMzHuT+28kJsrMcU=",
+        "lastModified": 1789088482,
+        "narHash": "sha256-xpE5MWHO2XUOCMrAXl+TbE+h79Fe1LMgR60PV6eTCcY=",
         "owner": "bioinformatist",
         "repo": "dotfiles",
-        "rev": "7ddecf15afc83d3b183e7e9b9a1aa939d0bd3701",
+        "rev": "a25b603039b02fddc07896847eb4fa0f0e1d2d13",
         "type": "github"
       },
       "original": {
