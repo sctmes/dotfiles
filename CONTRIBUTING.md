@@ -27,7 +27,7 @@ maint-switch
 
 版本来源是混合的：
 
-- upstream-owned 工具、Codex release pin、Codex skills/MCP、headless 开发工具声明和维护门控策略来自 `bioinformatist/dotfiles`。这些更新先进入 upstream，再通过更新本仓库的 `upstream` flake input 被 `116` 消费。
+- upstream-owned 工具、Codex 运行包选择、skills/MCP、headless 开发工具声明和维护门控策略来自 `bioinformatist/dotfiles`。Codex 独立 CLI 来自 upstream 锁定的 `llm-agents.nix` 社区包；配置、Improve 和 skills 来自 Codex Base。这些更新先进入 upstream，再通过更新本仓库的 `upstream` flake input 被 `116` 消费。
 - `116` 的基础 `nixpkgs`、`home-manager`、`sops-nix`、`disko`、`impermanence` 和 downstream 服务配置由本仓库自己的 flake lock 管理。
 - `Yazelix/nova/edge` 是 `116` 上仅供 `ysun` 使用的 downstream 实验。Home Manager 从锁定的 `edge` 安装适合 SSH/headless 环境的 `yazelix-no-rio`，入口是 `yzx enter`。`ysun` 作为手动激活的 headless canary，将它用于日常 SSH 工作并向 Nova 反馈；它不属于 upstream 通用配置，也不会提供给 `zky` 或 `wangrongfeng`。
 
@@ -65,16 +65,16 @@ Hyprland、GCC/Rust toolchain、Chromium/Electron 等重组件加入 allowlist�
 网络问题需要按路径拆分：Nix cache、GitHub release/direct fetch、npm registry 或
 node-gyp、Cargo registry 和运行时代理不是同一个问题。
 
-只有当目标机器当前运行的 Nix daemon 尚未信任声明式配置中的 Yazelix Cachix 时，
-普通用户才无法使用临时指定的 Cachix。合并并检查干净 `main` 后，由 root 条件式地
-bootstrap 目标 closure：
+Numtide 官方缓存和 Yazelix Cachix 的 URL、公开签名公钥均由主机配置声明。
+如果当前运行的 Nix daemon 尚未信任其中所需的缓存，普通用户临时指定它也不会生效。
+合并并检查干净 `main` 后，可由运维用户使用 root 条件式地 bootstrap 目标 closure：
 
 ```nu
-sudo nix build --no-link --print-out-paths --option extra-substituters https://yazelix.cachix.org --option extra-trusted-public-keys 'yazelix.cachix.org-1:ZgxIjQvaP0VTWL8Racx27mpUNzDJ97xC2y7QWYjmGNM=' .#nixosConfigurations.116.config.system.build.toplevel
+sudo nix build --no-link --print-out-paths --option extra-substituters 'https://cache.numtide.com https://yazelix.cachix.org' --option extra-trusted-public-keys 'niks3.numtide.com-1:DTx8wZduET09hRmMtKdQDxNNthLQETkc/yaX7M4qK0g= yazelix.cachix.org-1:ZgxIjQvaP0VTWL8Racx27mpUNzDJ97xC2y7QWYjmGNM=' .#nixosConfigurations.116.config.system.build.toplevel
 maint-switch --no-pull
 ```
 
-如果 live daemon 已信任该 Cachix，则跳过显式 bootstrap，仍由运维用户在审查后手动
+如果 live daemon 已信任所需缓存，则跳过显式 bootstrap，仍由运维用户在审查后手动
 执行 `maint-switch --no-pull`。`yazelix-no-rio` 作为 capability variant 当前不会获得完整
 `yazelix-edge` 的 channel-qualified identity，因此针对 `edge` 的 Nova 报告必须同时附上 `flake.lock` 中精确的锁定 revision
 和经过脱敏的复现上下文；可用 `open flake.lock | get nodes.yazelix.locked.rev` 读取 revision。

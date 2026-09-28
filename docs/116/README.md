@@ -4,9 +4,11 @@
 
 ## headless 开发环境
 
-`116` 通过本仓库锁定的 `upstream` flake input 继承 headless 开发工具集，包括 `gh`、Codex、Nushell、Helix、Yazi 和 ripgrep。共享 Codex 环境以 `Codex Base` 为权威来源，`bioinformatist/dotfiles` 负责兼容导出，本仓库再通过 `upstream` 继承。下表记录当前 upstream 管理的共享 Codex 能力及其触发边界；Codex release 自带且不由 dotfiles 管理的 system Skills 也单独列出，避免混淆两种来源。
+`116` 通过本仓库锁定的 `upstream` flake input 继承 headless 开发工具集，包括 `gh`、Codex、Nushell、Helix、Yazi 和 ripgrep。Codex 独立 CLI 来自 upstream 锁定的 `llm-agents.nix` 社区包；配置、Improve 和共享 skills 来自 Codex Base，由 `bioinformatist/dotfiles` 统一导出。Improve 和 doctor 使用同一份 CLI，服务器不安装桌面应用。下表记录当前 upstream 管理的共享 Codex 能力及其触发边界；Codex release 自带且不由 dotfiles 管理的 system Skills 也单独列出，避免混淆两种来源。
 
 upstream 合并、下游更新 `flake.lock` 和 `116` 完成 rebuild 是三个不同阶段。三步全部完成后，新能力才会出现在服务器上的新 Codex 会话中；不能只根据 upstream PR 已合并就判断已经部署。
+
+不能仅根据 rebuild 成功判断已经运行的 Codex 后台进程已更新。通过桌面应用连接 SSH 后台时，还需在受控重连后核对后台实际使用的运行包；安装路径更新不代表当前连接已更新。
 
 | 名称 | 类型 | 触发条件 | 功能 |
 | --- | --- | --- | --- |
