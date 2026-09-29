@@ -2,8 +2,6 @@
 set -euo pipefail
 
 host="${HOST:-116}"
-base_branch="${GITHUB_BASE_REF:-main}"
-base_ref="origin/${base_branch}"
 default_china_substituters="https://mirrors.ustc.edu.cn/nix-channels/store https://cache.numtide.com https://anyrun.cachix.org https://hyprland.cachix.org https://yazelix.cachix.org"
 default_china_extra_trusted_public_keys="niks3.numtide.com-1:DTx8wZduET09hRmMtKdQDxNNthLQETkc/yaX7M4qK0g= anyrun.cachix.org-1:pqBobmOjI7nKlsUMV25u9QHa9btJK65/C8vnO3p346s= hyprland.cachix.org-1:a7pgxzMz7+chwVL3/pzj6jIBMioiJM7ypFP8PwtkuGc= yazelix.cachix.org-1:ZgxIjQvaP0VTWL8Racx27mpUNzDJ97xC2y7QWYjmGNM="
 china_substituters="${CHINA_SUBSTITUTERS:-${default_china_substituters}}"
@@ -28,64 +26,27 @@ contains_marker() {
   return 1
 }
 
-create_yazelix_stub() {
-  local stub="$1"
-  mkdir -p "$stub"
-  cat > "${stub}/flake.nix" <<'EOF'
-{
-  outputs = { self }: {
-    packages.x86_64-linux.yzn = derivation {
-      name = "yzn-ci-stub";
-      builder = "/bin/sh";
-      args = [
-        "-c"
-        "mkdir -p $out/bin; printf '#!/bin/sh\nexit 0\n' > $out/bin/yzn; chmod +x $out/bin/yzn"
-      ];
-      system = "x86_64-linux";
-    };
-  };
-}
-EOF
-}
-
 collect_blocked_derivations() {
   local repo="$1"
   local output_file="$2"
   local direct_file="$3"
-  local dry_run_output="${tmp}/dry-run-$(basename "$repo").log"
-  local policy_file="${tmp}/policy-$(basename "$repo").json"
-  local -a override_args=()
-  local -a snapshot_allowed_markers=()
-
-  if grep -qE '^[[:space:]]*yazelix-next[.]url[[:space:]]*=' "${repo}/flake.nix"; then
-    override_args=(
-      --override-input yazelix-next "path:${tmp}/yazelix-next-stub"
-    )
-    snapshot_allowed_markers=("-yzn-ci-stub.drv")
-  fi
+  local dry_run_output policy_file
+  dry_run_output="${tmp}/dry-run-$(basename "$repo").log"
+  policy_file="${tmp}/policy-$(basename "$repo").json"
 
   : > "$output_file"
   : > "$direct_file"
 
-  if [[ -f "${repo}/scripts/maint/policy.json" \
-    && ! -f "${repo}/scripts/maint/policy-workstation.json" \
-    && ! -f "${repo}/scripts/maint/policy-overrides.json" ]]; then
-    # Revisions from before the flake policy interface stored one complete policy.
-    cp "${repo}/scripts/maint/policy.json" "$policy_file"
-  else
-    nix eval \
-      --json \
-      "${override_args[@]}" \
-      "${repo}#lib.maintenancePolicy" \
-      > "$policy_file"
-  fi
+  nix eval \
+    --json \
+    "${repo}#lib.maintenancePolicy" \
+    > "$policy_file"
 
   if ! (
     cd "$repo"
     nix build \
       --dry-run \
       -L \
-      "${override_args[@]}" \
       --option substituters "$china_substituters" \
       --option extra-substituters "" \
       --option extra-trusted-public-keys "$china_extra_trusted_public_keys" \
@@ -100,9 +61,6 @@ collect_blocked_derivations() {
   )
   mapfile -t allowed_markers < <(
     jq -r '.allowedLocalBuildMarkers[]' "$policy_file"
-    if ((${#snapshot_allowed_markers[@]})); then
-      printf '%s\n' "${snapshot_allowed_markers[@]}"
-    fi
   )
   mapfile -t direct_markers < <(jq -r '.allowedDirectFetchMarkers[]' "$policy_file")
 
@@ -121,9 +79,23 @@ collect_blocked_derivations() {
   sort -u "$direct_file" -o "$direct_file"
 }
 
-git fetch --quiet origin "${base_branch}:refs/remotes/origin/${base_branch}"
-git worktree add --detach "${tmp}/base" "$base_ref" >/dev/null
-create_yazelix_stub "${tmp}/yazelix-next-stub"
+case "${GITHUB_EVENT_NAME:-}" in
+  pull_request)
+    base_sha="$(git rev-parse HEAD^1)"
+    ;;
+  merge_group)
+    base_sha="$(jq -er '.merge_group.base_sha' "$GITHUB_EVENT_PATH")"
+    ;;
+  workflow_dispatch)
+    base_sha="$(git rev-parse origin/main)"
+    ;;
+  *)
+    echo "Unsupported GitHub event: ${GITHUB_EVENT_NAME:-<unset>}" >&2
+    exit 1
+    ;;
+esac
+
+git worktree add --detach "${tmp}/base" "$base_sha" >/dev/null
 
 base_blocked="${tmp}/base.blocked"
 head_blocked="${tmp}/head.blocked"
@@ -141,6 +113,8 @@ comm -13 "$base_direct" "$head_direct" > "$new_direct"
 {
   echo "### 116 cache gate"
   echo
+  echo "- Base SHA: \`${base_sha}\`"
+  echo "- Head SHA: \`$(git rev-parse HEAD)\`"
   echo "- Base blocked derivations: \`$(wc -l < "$base_blocked")\`"
   echo "- Head blocked derivations: \`$(wc -l < "$head_blocked")\`"
   echo "- New blocked derivations: \`$(wc -l < "$new_blocked")\`"
