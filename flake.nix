@@ -69,24 +69,6 @@
             export COREPACK_HOME="''${COREPACK_HOME:-''${XDG_CACHE_HOME:-$HOME/.cache}/corepack/reactive-resume}"
           '';
         };
-
-        orca = pkgs.mkShell {
-          packages = with pkgs; [
-            nodejs_24
-            pnpm
-            openssl
-            unzip
-
-            gcc
-            gnumake
-            pkg-config
-            python3
-          ];
-
-          shellHook = ''
-            export COREPACK_HOME="''${COREPACK_HOME:-''${XDG_CACHE_HOME:-$HOME/.cache}/corepack/orca}"
-          '';
-        };
       };
 
       nixosConfigurations."116" = nixpkgs.lib.nixosSystem {

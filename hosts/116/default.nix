@@ -66,7 +66,6 @@ in
   imports = [
     ./disko-config.nix
     ./docker.nix
-    ./orca-remote.nix
     ./proxy.nix
     ./storage-data1.nix
     ./services.nix
