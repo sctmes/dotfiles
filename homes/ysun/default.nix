@@ -14,6 +14,7 @@
   dotfiles.codex.trustedProjects = [
     "/home/ysun/github.com/sctmes/dotfiles"
   ];
+  dotfiles.codex.proxyRecovery.enable = lib.mkDefault true;
 
   programs.nushell = {
     loginFile.text = lib.mkForce "";

@@ -1,6 +1,6 @@
 { inputs, username }:
 
-{ ... }:
+{ lib, ... }:
 {
   imports = [
     inputs.upstream.homeManagerModules.headlessDevTools
@@ -14,6 +14,7 @@
   };
 
   dotfiles.codex = {
+    proxyRecovery.enable = lib.mkDefault true;
     trustedProjects = [
       "/home/${username}/github.com/sctmes/dotfiles"
     ];
