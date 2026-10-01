@@ -73,9 +73,6 @@ in
   ]
   ++ lib.optional (builtins.pathExists ./hardware-configuration.nix) ./hardware-configuration.nix;
 
-  # ChatGPT App sends POSIX bootstrap commands through the SSH login shell.
-  users.users.${username}.shell = lib.mkForce pkgs.bashInteractive;
-
   networking.hostName = "bigdick";
   networking.useDHCP = false;
   networking.interfaces.enp6s0.useDHCP = true;
@@ -122,9 +119,13 @@ in
     PermitRootLogin = "no";
   };
 
-  users.users.${username}.openssh.authorizedKeys.keys = [
-    "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGtt7b+dw26OWbwowudCyFf+HwR6Phh/8pUA0DnA26tV ysun@sctmes-ops"
-  ];
+  users.users.${username} = {
+    # ChatGPT App sends POSIX bootstrap commands through the SSH login shell.
+    shell = lib.mkForce pkgs.bashInteractive;
+    openssh.authorizedKeys.keys = [
+      "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGtt7b+dw26OWbwowudCyFf+HwR6Phh/8pUA0DnA26tV ysun@sctmes-ops"
+    ];
+  };
 
   networking.firewall.enable = false;
 
