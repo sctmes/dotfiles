@@ -73,6 +73,9 @@ in
   ]
   ++ lib.optional (builtins.pathExists ./hardware-configuration.nix) ./hardware-configuration.nix;
 
+  # ChatGPT App sends POSIX bootstrap commands through the SSH login shell.
+  users.users.${username}.shell = lib.mkForce pkgs.bashInteractive;
+
   networking.hostName = "bigdick";
   networking.useDHCP = false;
   networking.interfaces.enp6s0.useDHCP = true;
