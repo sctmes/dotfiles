@@ -31,6 +31,7 @@ collect_blocked_derivations() {
   local output_file="$2"
   local direct_file="$3"
   local dry_run_output policy_file
+  shift 3
   dry_run_output="${tmp}/dry-run-$(basename "$repo").log"
   policy_file="${tmp}/policy-$(basename "$repo").json"
 
@@ -39,6 +40,7 @@ collect_blocked_derivations() {
 
   nix eval \
     --json \
+    "$@" \
     "${repo}#lib.maintenancePolicy" \
     > "$policy_file"
 
@@ -50,6 +52,7 @@ collect_blocked_derivations() {
       --option substituters "$china_substituters" \
       --option extra-substituters "" \
       --option extra-trusted-public-keys "$china_extra_trusted_public_keys" \
+      "$@" \
       ".#nixosConfigurations.${host}.config.system.build.toplevel"
   ) >"$dry_run_output" 2>&1; then
     cat "$dry_run_output" >&2
@@ -104,7 +107,14 @@ head_direct="${tmp}/head.direct"
 new_blocked="${tmp}/new.blocked"
 new_direct="${tmp}/new.direct"
 
-collect_blocked_derivations "${tmp}/base" "$base_blocked" "$base_direct"
+base_mode="delta"
+base_source=()
+if [[ "$(jq -r '.nodes.yazelix.locked.rev' "${tmp}/base/flake.lock")" == "16dae898bc79e47f55f729f93cd2a8fc40209a4e" ]]; then
+  # Its private Zellij fork was merged upstream; keep the old Yazelix package for comparison.
+  base_source=(--override-input yazelix/yazelixZellij github:zellij-org/zellij/81f56e1aed4e17b822af5cb382a8f524e35f3eae)
+  base_mode="delta (public Zellij source for historical base)"
+fi
+collect_blocked_derivations "${tmp}/base" "$base_blocked" "$base_direct" "${base_source[@]}"
 collect_blocked_derivations "$PWD" "$head_blocked" "$head_direct"
 
 comm -13 "$base_blocked" "$head_blocked" > "$new_blocked"
@@ -115,6 +125,7 @@ comm -13 "$base_direct" "$head_direct" > "$new_direct"
   echo
   echo "- Base SHA: \`${base_sha}\`"
   echo "- Head SHA: \`$(git rev-parse HEAD)\`"
+  echo "- Comparison: \`${base_mode}\`"
   echo "- Base blocked derivations: \`$(wc -l < "$base_blocked")\`"
   echo "- Head blocked derivations: \`$(wc -l < "$head_blocked")\`"
   echo "- New blocked derivations: \`$(wc -l < "$new_blocked")\`"
@@ -130,7 +141,7 @@ if [[ -s "$new_direct" ]]; then
 fi
 
 if [[ -s "$new_blocked" ]]; then
-  echo "116 cache gate found new unapproved local derivations:" >&2
+  echo "116 cache gate found unapproved local derivations:" >&2
   sed -n '1,20s/^/  /p' "$new_blocked" >&2
   exit 1
 fi
