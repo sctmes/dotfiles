@@ -104,7 +104,15 @@ head_direct="${tmp}/head.direct"
 new_blocked="${tmp}/new.blocked"
 new_direct="${tmp}/new.direct"
 
-collect_blocked_derivations "${tmp}/base" "$base_blocked" "$base_direct"
+base_mode="delta"
+if [[ "$(jq -r '.nodes.yazelix.locked.rev' "${tmp}/base/flake.lock")" == "16dae898bc79e47f55f729f93cd2a8fc40209a4e" ]]; then
+  # This historical Yazelix pin fetches a now-private source. Check the entire head instead.
+  : > "$base_blocked"
+  : > "$base_direct"
+  base_mode="full head (historical Yazelix source unavailable)"
+else
+  collect_blocked_derivations "${tmp}/base" "$base_blocked" "$base_direct"
+fi
 collect_blocked_derivations "$PWD" "$head_blocked" "$head_direct"
 
 comm -13 "$base_blocked" "$head_blocked" > "$new_blocked"
@@ -115,6 +123,7 @@ comm -13 "$base_direct" "$head_direct" > "$new_direct"
   echo
   echo "- Base SHA: \`${base_sha}\`"
   echo "- Head SHA: \`$(git rev-parse HEAD)\`"
+  echo "- Comparison: \`${base_mode}\`"
   echo "- Base blocked derivations: \`$(wc -l < "$base_blocked")\`"
   echo "- Head blocked derivations: \`$(wc -l < "$head_blocked")\`"
   echo "- New blocked derivations: \`$(wc -l < "$new_blocked")\`"
@@ -130,7 +139,7 @@ if [[ -s "$new_direct" ]]; then
 fi
 
 if [[ -s "$new_blocked" ]]; then
-  echo "116 cache gate found new unapproved local derivations:" >&2
+  echo "116 cache gate found unapproved local derivations:" >&2
   sed -n '1,20s/^/  /p' "$new_blocked" >&2
   exit 1
 fi
