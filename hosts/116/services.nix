@@ -8,11 +8,9 @@
 
 let
   labelStudioDataDir = "/var/lib/label-studio";
-  labelStudioHost = "https://label.bigdick.live:2053";
-  labelStudioDomain = "label.bigdick.live";
+  labelStudioHost = "http://8.sctmes.com:28088";
   ssh116Domain = "ssh-116.bigdick.live";
   labelStudioAdminEmail = "ysun@sctmes.com";
-  ddnsGoIpv6Regex = ".*:3e7c:3fff:fed3:88b7$";
   mihomoDir = "/etc/sctmes/116/mihomo";
   mihomoDefaultConfig = pkgs.writeText "mihomo-default-config.yaml" ''
     mixed-port: 7890
@@ -332,14 +330,6 @@ in
       sops.secrets.label-studio-postgres-password = { };
       sops.secrets.mihomo-controller-secret = { };
 
-      services.caddy = {
-        enable = true;
-        virtualHosts."${labelStudioDomain}:2053".extraConfig = ''
-          tls internal
-          reverse_proxy 127.0.0.1:18080
-        '';
-      };
-
       sops.templates."cloudflare-ddns-compose.yml".content = ''
         services:
           ddns-go:
@@ -366,29 +356,6 @@ in
 
       sops.templates."ddns-go-config.yaml".content = ''
         dnsconf:
-          - name: cloudflare
-            ipv4:
-              enable: false
-              gettype: url
-              url: ""
-              netinterface: ""
-              cmd: ""
-              domains:
-                - ""
-            ipv6:
-              enable: true
-              gettype: netInterface
-              url: ""
-              netinterface: enp6s0
-              cmd: ""
-              ipv6reg: "${ddnsGoIpv6Regex}"
-              domains:
-                - "${labelStudioDomain}?proxied=true"
-            dns:
-              name: cloudflare
-              id: ""
-              secret: ${config.sops.placeholder."cloudflare-ddns-token"}
-            ttl: "1"
           - name: cloudflare-ssh-116
             ipv4:
               enable: false
@@ -429,7 +396,7 @@ in
             image: heartexlabs/label-studio:latest
             container_name: label-studio-nginx
             ports:
-              - "127.0.0.1:18080:8085"
+              - "192.168.0.116:28088:8085"
             depends_on:
               - app
             environment:
@@ -490,6 +457,42 @@ in
           ExecStop = "${pkgs.docker-compose}/bin/docker-compose -p cloudflare-ddns -f ${config.sops.templates."cloudflare-ddns-compose.yml".path} down";
           TimeoutStartSec = "0";
         };
+      };
+
+      systemd.services.label-studio-return-route = {
+        description = "Route Label Studio replies outside the proxy TUN";
+        after = [ "network-online.target" ];
+        wants = [ "network-online.target" ];
+        before = [ "label-studio-compose.service" ];
+        requiredBy = [ "label-studio-compose.service" ];
+        wantedBy = [ "multi-user.target" ];
+        path = [ pkgs.iproute2 pkgs.jq ];
+        serviceConfig = {
+          Type = "oneshot";
+          RemainAfterExit = true;
+          ExecStop = "-${pkgs.iproute2}/bin/ip -4 rule del pref 8990 ipproto tcp sport 8085 lookup main";
+        };
+        script = ''
+          set -euo pipefail
+
+          # Docker restores the public source port after this routing decision.
+          existing="$(ip -j -4 rule show pref 8990)"
+          if printf '%s\n' "$existing" | jq -e 'length == 0' >/dev/null; then
+            ip -4 rule add pref 8990 ipproto tcp sport 8085 lookup main
+          elif ! printf '%s\n' "$existing" | jq -e '
+            . == [{
+              "priority": 8990,
+              "src": "all",
+              "ipproto": "tcp",
+              "sport": 8085,
+              "sport_mask": "0xffff",
+              "table": "main"
+            }]
+          ' >/dev/null; then
+            printf '%s\n' 'error: routing rule priority 8990 is already in use' >&2
+            exit 1
+          fi
+        '';
       };
 
       systemd.services.label-studio-compose = {

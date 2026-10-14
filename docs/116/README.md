@@ -59,8 +59,9 @@ yzx enter
   - 运行配置在 `/persist/mihomo/config.yaml`
   - 真实订阅 URL 不进仓库
 - Label Studio: `label-studio-compose.service`
-  - 公网入口: `https://label.bigdick.live:2053`
-  - 对外 HTTPS 依赖 Cloudflare 代理和 Caddy
+  - 公网入口: `http://8.sctmes.com:28088`
+  - 通过群晖 DDNS 和 OpenWrt TCP 28088 端口映射直连 Label Studio 的 Nginx 容器，使用 HTTP
+  - `label-studio-return-route.service` 让 TCP 源端口 8085 的响应优先使用正常路由表，避免公网连接的响应进入 Mihomo TUN；本机其他服务复用该源端口时需重新评估
   - 初始密码来自 SOPS，上线后应在 Label Studio 内轮换
 - 助手服务栈: `jarvis-vllm-compose.service`
   - `8080`: 兼容 OpenAI 的 API
@@ -75,7 +76,6 @@ yzx enter
 - `/var/lib/docker`
 - `/var/lib/ai-serving/models`
 - `/var/lib/label-studio`
-- `/var/lib/caddy`
 
 这些路径通过 `/persist` 持久化。重装系统 SSD 时，不要假设旧 `/home` 会被保留；需要保留的个人数据应提前备份或迁移。
 
@@ -151,7 +151,6 @@ nu ./scripts/install-116.nu root@192.168.0.116 --proxy http://<lan-proxy>:<port>
     ```nu
     systemctl status mihomo-compose.service
     systemctl status cloudflare-ddns-compose.service
-    systemctl status caddy.service
     systemctl status label-studio-compose.service
     ```
 
@@ -164,7 +163,7 @@ nu ./scripts/install-116.nu root@192.168.0.116 --proxy http://<lan-proxy>:<port>
     4. 运行 `docker exec mihomo /mihomo -t -d /root/.config/mihomo -f /root/.config/mihomo/config.yaml` 验证配置。
     5. 运行 `sudo systemctl restart mihomo-compose.service`。
 
-12. 在 `https://label.bigdick.live:2053` 登录 Label Studio 并轮换初始密码。
+12. 在 `http://8.sctmes.com:28088` 登录 Label Studio 并轮换初始密码。
 
 ## GitHub 认证
 
