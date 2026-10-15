@@ -10,6 +10,7 @@
     "-runtime_identity.json.drv",
     "-dhcpcd.conf.drv",
     "-ddns-go-config.yaml.drv",
+    "-label-studio-compose.yml.drv",
     "-enforce-mihomo-routing-policy.drv",
     "-yzx-zellij.drv",
     "-yazelix-no-rio.drv"
