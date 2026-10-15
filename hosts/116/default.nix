@@ -147,7 +147,6 @@ in
     directories = [
       "/var/log"
       "/var/lib/nixos"
-      "/var/lib/caddy"
       "/var/lib/docker"
       "/var/lib/ai-serving"
       "/var/lib/label-studio"
