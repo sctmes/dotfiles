@@ -393,7 +393,8 @@ in
       sops.templates."label-studio-compose.yml".content = ''
         services:
           nginx:
-            image: heartexlabs/label-studio:latest
+            image: pineapplehub-label-studio:1.23.2-number-empty-8d829fd-20261019
+            pull_policy: never
             container_name: label-studio-nginx
             ports:
               - "192.168.0.116:28088:8085"
@@ -407,7 +408,8 @@ in
             restart: unless-stopped
 
           app:
-            image: heartexlabs/label-studio:latest
+            image: pineapplehub-label-studio:1.23.2-number-empty-8d829fd-20261019
+            pull_policy: never
             container_name: label-studio-app
             expose:
               - "8000"
