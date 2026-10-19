@@ -57,3 +57,43 @@ jobs:
       - name: Check 116 cache gate
         shell: bash
         run: bash scripts/maint/ci-cache-gate.sh
+
+      - name: Report 116 cache gate diagnostics
+        if: ${{ always() }}
+        continue-on-error: true
+        shell: bash
+        run: |
+          diagnostics="$RUNNER_TEMP/cache-gate-116-diagnostics"
+          if [[ -s "$diagnostics/summary.md" ]]; then
+            cat "$diagnostics/summary.md"
+            cat "$diagnostics/summary.md" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "No cache gate summary was produced."
+          fi
+
+          for file in "$diagnostics"/*.policy.err; do
+            [[ -f "$file" ]] || continue
+            echo "## $(basename "$file") (last 40 lines)"
+            tail -n 40 "$file"
+          done
+
+          for file in "$diagnostics"/*.dry-run.log; do
+            [[ -f "$file" ]] || continue
+            echo "## $(basename "$file") diagnostics (last 40 matching lines)"
+            grep -Ei 'error:|warning:|fatal:' "$file" | tail -n 40 || true
+          done
+
+      - name: Upload 116 cache gate diagnostics
+        if: ${{ always() }}
+        continue-on-error: true
+        uses: actions/upload-artifact@v7
+        with:
+          name: cache-gate-116-diagnostics-${{ github.run_attempt }}
+          path: |
+            ${{ runner.temp }}/cache-gate-116-diagnostics/*.log
+            ${{ runner.temp }}/cache-gate-116-diagnostics/*.err
+            ${{ runner.temp }}/cache-gate-116-diagnostics/*.json
+            ${{ runner.temp }}/cache-gate-116-diagnostics/*.tsv
+            ${{ runner.temp }}/cache-gate-116-diagnostics/*.txt
+            ${{ runner.temp }}/cache-gate-116-diagnostics/*.md
+          if-no-files-found: warn
