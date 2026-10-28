@@ -123,11 +123,11 @@ nu ./scripts/install-116.nu root@192.168.0.116 --proxy http://<lan-proxy>:<port>
    `mihomo-config-bootstrap` 是 `RemainAfterExit` 的 oneshot。导入运行配置后，即使目标 generation 没有变化，也要显式重跑该 unit 才能保证执行归一化。
 6. 确认归一化目标：
 
-   - `Proxy` 仍是依次包含 `WestWorld Auto` 与 `YToo Backup` 的 `fallback`，沿用 gstatic URL、300秒间隔和8000ms超时。
-   - `WestWorld Auto` 只选 `WestWorld` 中严格匹配日本的节点，以 `https://github.com/robots.txt`、`expected-status: 200` 测速；保留1800秒间隔、8000ms超时、`tolerance: 100` 和 `lazy: true`。
+   - `Proxy` 只使用 `WestWorld Auto`，不自动回退到 `YToo Backup`；沿用 gstatic URL、300秒间隔和8000ms超时。
+   - `WestWorld Auto` 只选 `WestWorld` 中严格匹配日本或台湾的节点，以 `https://github.com/robots.txt`、`expected-status: 200` 测速；保留1800秒间隔、8000ms超时、`tolerance: 100` 和 `lazy: true`。
    - `lazy: true` 允许跳过空闲周期，100ms容差减少频繁切换。此指标衡量 GitHub 请求延迟和可达性，不代表 API/raw/release 的全部质量。
    - `YToo Backup` 保持使用 `YToo` provider 的 `select` 组，不参与自动节点测速。
-   - WestWorld provider 的 `health-check` 保持 enable=false/url=""/interval=0/timeout=8000/lazy=true；清空默认 URL，避免对全部节点进行默认探测，由日本组注册测速任务。
+   - WestWorld provider 的 `health-check` 保持 enable=false/url=""/interval=0/timeout=8000/lazy=true；清空默认 URL，避免对全部节点进行默认探测，由日本和台湾组注册测速任务。
 7. 验证配置并重启 Mihomo：
 
    ```nu
@@ -137,7 +137,7 @@ nu ./scripts/install-116.nu root@192.168.0.116 --proxy http://<lan-proxy>:<port>
 8. 重启后验证：
 
    - 确认 Mihomo 服务与 SSH 正常。
-   - 通过 controller `/providers/proxies/WestWorld` 查看上述 GitHub URL 的新测速记录，日本节点至少一个成功；沿用 SOPS `mihomo-controller-secret` 认证，不打印 secret，不手动全部测速制造结果。
+   - 通过 controller `/providers/proxies/WestWorld` 查看上述 GitHub URL 的新测速记录，日本或台湾节点至少一个成功；沿用 SOPS `mihomo-controller-secret` 认证，不打印 secret，不手动全部测速制造结果。
    - 确认 `YToo Backup` 和外层 `Proxy` 仍符合第6项。下面 curl 的最终 HTTP 状态应为200，`CONNECT` 200不等于目标站点成功。
 
    ```nu
