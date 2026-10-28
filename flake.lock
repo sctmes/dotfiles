@@ -662,17 +662,17 @@
         "treefmt-nix": "treefmt-nix_2"
       },
       "locked": {
-        "lastModified": 1793076623,
-        "narHash": "sha256-bfI04e2dsG3H316poDdpTzUS6uFI43aTWNgYYXkn32U=",
+        "lastModified": 1793138725,
+        "narHash": "sha256-CfyUjhn0IgDcCX8frMonfeu7L5V1JP7GX3+7YN0bkEQ=",
         "owner": "numtide",
         "repo": "llm-agents.nix",
-        "rev": "eaf48f8e126668eebc3eb13e43b18368a4330d95",
+        "rev": "c0862f8941eaf6fb592402743f04facc073d7962",
         "type": "github"
       },
       "original": {
         "owner": "numtide",
         "repo": "llm-agents.nix",
-        "rev": "eaf48f8e126668eebc3eb13e43b18368a4330d95",
+        "rev": "c0862f8941eaf6fb592402743f04facc073d7962",
         "type": "github"
       }
     },
@@ -1551,11 +1551,11 @@
         "swww": "swww"
       },
       "locked": {
-        "lastModified": 1793105921,
-        "narHash": "sha256-Pv7n8YvnKTemNuXWffKuZOREaO5TwQvF2Jnx64pPk2g=",
+        "lastModified": 1793149248,
+        "narHash": "sha256-HEfcuUUsemSYxDm9LrAVlJnh7iFgwBDUcR4q74XLS5o=",
         "owner": "bioinformatist",
         "repo": "dotfiles",
-        "rev": "af5e7bf4fc94b66da86e6fdef824b285d22ef245",
+        "rev": "e8dc7e04ff966a7f0947f92638740a90ce5f53f9",
         "type": "github"
       },
       "original": {
