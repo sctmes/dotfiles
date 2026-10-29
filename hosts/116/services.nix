@@ -78,7 +78,7 @@ let
       config_dir="$(dirname -- "$config_path")"
 
       if yq eval -e '((.["proxy-providers"] // {}) | keys | length) == 0' "$config_path" >/dev/null 2>&1; then
-        printf '%s\n' 'ready: WestWorld Japan matches=0'
+        printf '%s\n' 'ready: WestWorld Japan and Taiwan matches=0'
         exit 0
       fi
 
@@ -124,17 +124,17 @@ let
         fail 'error: WestWorld provider cache is unavailable'
       fi
 
-      count_japan_matches() {
-        yq eval '[.proxies[]? | select(.name | test("(?i)(日本|🇯🇵|\\bJP\\b)"))] | length' "$provider_cache" 2>/dev/null
+      count_region_matches() {
+        yq eval '[.proxies[]? | select(.name | test("(?i)(日本|🇯🇵|\\bJP\\b|台湾(专线|$|[ ·])|🇹🇼|\\bTW\\b)"))] | length' "$provider_cache" 2>/dev/null
       }
 
-      if ! japan_matches="$(count_japan_matches)"; then
+      if ! region_matches="$(count_region_matches)"; then
         fail 'error: cannot inspect WestWorld provider cache'
       fi
-      if ! [[ "$japan_matches" =~ ^[0-9]+$ ]] || [ "$japan_matches" -le 0 ]; then
-        fail 'error: WestWorld provider cache has no eligible Japan nodes'
+      if ! [[ "$region_matches" =~ ^[0-9]+$ ]] || [ "$region_matches" -le 0 ]; then
+        fail 'error: WestWorld provider cache has no eligible Japan or Taiwan nodes'
       fi
-      printf 'ready: WestWorld Japan matches=%s\n' "$japan_matches"
+      printf 'ready: WestWorld Japan and Taiwan matches=%s\n' "$region_matches"
 
       if [ "$mode" = '--check' ]; then
         exit 0
@@ -150,9 +150,8 @@ let
           [
             (($proxy | length) == 1),
             ($proxy[0].type == "fallback"),
-            (($proxy[0].proxies | length) == 2),
+            (($proxy[0].proxies | length) == 1),
             ($proxy[0].proxies[0] == "WestWorld Auto"),
-            ($proxy[0].proxies[1] == "YToo Backup"),
             ($proxy[0].url == "https://www.gstatic.com/generate_204"),
             ($proxy[0].interval == 300),
             ($proxy[0].timeout == 8000),
@@ -174,7 +173,7 @@ let
             ($westworld[0].tolerance == 100),
             ($westworld[0] | has("lazy")),
             ($westworld[0].lazy == true),
-            ($westworld[0].filter == "(?i)(日本|🇯🇵|\\bJP\\b)"),
+            ($westworld[0].filter == "(?i)(日本|🇯🇵|\\bJP\\b|台湾(专线|$|[ ·])|🇹🇼|\\bTW\\b)"),
             ($westworld[0] | (has("proxies") or has("exclude-filter")) | not),
             ($westworld_health_check.enable == false),
             ($westworld_health_check.url == ""),
@@ -228,7 +227,7 @@ let
       if ! yq eval --output-format=yaml '
         (.["proxy-groups"][] | select(.name == "Proxy")) |= (
           .type = "fallback"
-          | .proxies = ["WestWorld Auto", "YToo Backup"]
+          | .proxies = ["WestWorld Auto"]
           | .url = "https://www.gstatic.com/generate_204"
           | .interval = 300
           | .timeout = 8000
@@ -243,7 +242,7 @@ let
           | .timeout = 8000
           | .tolerance = 100
           | .lazy = true
-          | .filter = "(?i)(日本|🇯🇵|\\bJP\\b)"
+          | .filter = "(?i)(日本|🇯🇵|\\bJP\\b|台湾(专线|$|[ ·])|🇹🇼|\\bTW\\b)"
           | del(.proxies, .["exclude-filter"])
         )
         | .["proxy-providers"].WestWorld["health-check"] = {
@@ -266,11 +265,11 @@ let
       if ! target_state_matches "$tmp_file"; then
         fail 'error: transformed routing policy does not match target'
       fi
-      if ! japan_matches_after="$(count_japan_matches)"; then
+      if ! region_matches_after="$(count_region_matches)"; then
         fail 'error: cannot recheck WestWorld provider cache'
       fi
-      if ! [[ "$japan_matches_after" =~ ^[0-9]+$ ]] || [ "$japan_matches_after" -le 0 ]; then
-        fail 'error: WestWorld provider cache has no eligible Japan nodes'
+      if ! [[ "$region_matches_after" =~ ^[0-9]+$ ]] || [ "$region_matches_after" -le 0 ]; then
+        fail 'error: WestWorld provider cache has no eligible Japan or Taiwan nodes'
       fi
       if ! mihomo -t -d "$config_dir" -f "$tmp_file" >/dev/null 2>&1; then
         fail 'error: transformed Mihomo config is invalid'
