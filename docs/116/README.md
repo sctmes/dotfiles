@@ -123,7 +123,7 @@ nu ./scripts/install-116.nu root@192.168.0.116 --proxy http://<lan-proxy>:<port>
    `mihomo-config-bootstrap` 是 `RemainAfterExit` 的 oneshot。导入运行配置后，即使目标 generation 没有变化，也要显式重跑该 unit 才能保证执行归一化。
 6. 确认归一化目标：
 
-   - `Proxy` 只使用 `WestWorld Auto`，不自动回退到 `YToo Backup`；沿用 gstatic URL、300秒间隔和8000ms超时。
+   - `Proxy` 是手动选择组，默认使用 `SCTMES Trial`；可在界面中手动切换到 `WestWorld Auto`，不会自动使用 `YToo Backup`。
    - `WestWorld Auto` 只选 `WestWorld` 中严格匹配日本或台湾的节点，以 `https://github.com/robots.txt`、`expected-status: 200` 测速；保留1800秒间隔、8000ms超时、`tolerance: 100` 和 `lazy: true`。
    - `lazy: true` 允许跳过空闲周期，100ms容差减少频繁切换。此指标衡量 GitHub 请求延迟和可达性，不代表 API/raw/release 的全部质量。
    - `YToo Backup` 保持使用 `YToo` provider 的 `select` 组，不参与自动节点测速。
