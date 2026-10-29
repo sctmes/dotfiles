@@ -145,18 +145,28 @@ let
           (.["proxy-groups"] // []) as $groups |
           (.["proxy-providers"].WestWorld["health-check"] // {}) as $westworld_health_check |
           ($groups | map(select(.name == "Proxy"))) as $proxy |
+          ((.proxies // []) | map(select(.name == "SCTMES Trial"))) as $trial |
           ($groups | map(select(.name == "WestWorld Auto"))) as $westworld |
           ($groups | map(select(.name == "YToo Backup"))) as $backup |
           [
             (($proxy | length) == 1),
-            ($proxy[0].type == "fallback"),
-            (($proxy[0].proxies | length) == 1),
-            ($proxy[0].proxies[0] == "WestWorld Auto"),
-            ($proxy[0].url == "https://www.gstatic.com/generate_204"),
-            ($proxy[0].interval == 300),
-            ($proxy[0].timeout == 8000),
+            ($proxy[0].type == "select"),
+            (($proxy[0].proxies | length) == 2),
+            ($proxy[0].proxies[0] == "SCTMES Trial"),
+            ($proxy[0].proxies[1] == "WestWorld Auto"),
+            (($trial | length) == 1),
+            ($trial[0].type == "trojan"),
+            ($trial[0].server == "bk.sctmes.com"),
+            ($trial[0].port == 443),
+            ($trial[0].password == strenv(TASK_PROXY_PASSWORD)),
+            (($trial[0].alpn | length) == 2),
+            ($trial[0].alpn[0] == "h2"),
+            ($trial[0].alpn[1] == "http/1.1"),
             ($proxy[0] | (
               has("use")
+              or has("url")
+              or has("interval")
+              or has("timeout")
               or has("tolerance")
               or has("lazy")
               or has("filter")
@@ -225,13 +235,12 @@ let
       trap cleanup EXIT
 
       if ! yq eval --output-format=yaml '
-        (.["proxy-groups"][] | select(.name == "Proxy")) |= (
-          .type = "fallback"
-          | .proxies = ["WestWorld Auto"]
-          | .url = "https://www.gstatic.com/generate_204"
-          | .interval = 300
-          | .timeout = 8000
-          | del(.use, .tolerance, .lazy, .filter, .["exclude-filter"])
+        .proxies = ((.proxies // []) | map(select(.name != "SCTMES Trial")))
+        | .proxies += [{"name": "SCTMES Trial", "type": "trojan", "server": "bk.sctmes.com", "port": 443, "password": strenv(TASK_PROXY_PASSWORD), "alpn": ["h2", "http/1.1"]}]
+        | (.["proxy-groups"][] | select(.name == "Proxy")) |= (
+          .type = "select"
+          | .proxies = ["SCTMES Trial", "WestWorld Auto"]
+          | del(.use, .url, .interval, .timeout, .tolerance, .lazy, .filter, .["exclude-filter"])
         )
         | (.["proxy-groups"][] | select(.name == "WestWorld Auto")) |= (
           .type = "url-test"
@@ -328,6 +337,10 @@ in
       sops.secrets.label-studio-admin-password = { };
       sops.secrets.label-studio-postgres-password = { };
       sops.secrets.mihomo-controller-secret = { };
+      sops.secrets.mihomo-trial-password = {
+        sopsFile = ../../secrets/hosts/116/mihomo-trial.yaml;
+        key = "password";
+      };
 
       sops.templates."cloudflare-ddns-compose.yml".content = ''
         services:
@@ -555,6 +568,7 @@ dns:
 EOF
           fi
 
+          export TASK_PROXY_PASSWORD="$(cat ${config.sops.secrets.mihomo-trial-password.path})"
           enforce-mihomo-routing-policy --apply /persist/mihomo/config.yaml
         '';
       };
