@@ -34,6 +34,30 @@ maint-switch
 
 `maint-switch` 只应用当前仓库状态，不会自动更新 flake inputs。依赖更新和 rebuild 流程见 [CONTRIBUTING.md](../../CONTRIBUTING.md)。
 
+### Codex 桌面远程文件读取兼容
+
+桌面客户端的 SSH 文件读取器固定调用远端 `/bin/cat`。`116` 通过
+`hosts/116/default.nix` 的 tmpfiles `L` 规则将这个路径链接到系统已有的
+`/run/current-system/sw/bin/cat`；随当前系统切换，避免升级和 GC 后仍引用旧
+store 路径。不启用完整 FHS 环境，也不强制覆盖已有路径。
+
+由运维用户在审核通过的干净 checkout 中执行 `maint-switch --no-pull`。
+激活前应确认 `/bin/cat` 既不存在也不是悬空链接；如已有路径，先查明归属。
+激活后检查链接及读取行为，再从桌面客户端打开一个无关测试文件，最后重试
+原文章入口。无需为此重启业务服务。
+
+```nu
+ls -l /bin/cat
+readlink /bin/cat
+printf 'codex-cat-check\n' | /bin/cat
+```
+
+撤销时先删除该 tmpfiles 规则，通过 PR 审核后重新构建并激活。
+仅回退系统 generation 或移除规则不会立即删除已创建的链接；删除前记录
+`readlink /bin/cat`，核对它仍指向 `/run/current-system/sw/bin/cat`，而不是其他
+文件或运维人员替换的路径。确认后由运维用户执行 `sudo unlink /bin/cat`，
+再检查路径已消失。不要用 tmpfiles 全量 purge 来清理这一条链接。
+
 ### Yazelix Nova
 
 `116` 只为 `ysun` 从 `Yazelix/nova/edge` 安装适合 SSH/headless 环境的 `yazelix-no-rio`，入口是 `yzx enter`。`ysun` 将它作为日常 SSH 工作的 edge canary，但每次更新仍由运维用户审查后手动激活；`zky`、`wangrongfeng` 和 upstream 通用配置不会获得 Yazelix 或通用 Zellij。Renovate、maintenance gate、条件式 Cachix bootstrap、手动应用和 lock-based rollback 的责任边界见 [CONTRIBUTING.md](../../CONTRIBUTING.md)。
