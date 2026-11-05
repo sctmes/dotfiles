@@ -82,6 +82,11 @@ in
   programs.nix-ld.enable = true;
   programs.nano.enable = false;
 
+  # Codex desktop's SSH file reader invokes /bin/cat on the remote host.
+  # Follow the active system so upgrades/GC cannot leave an old store target.
+  # L (without +) leaves any existing path untouched.
+  systemd.tmpfiles.rules = [ "L /bin/cat - - - - /run/current-system/sw/bin/cat" ];
+
   nixpkgs.config.allowUnfreePredicate = pkg: builtins.elem (lib.getName pkg) [ "futu-opend" ];
 
   boot.loader.systemd-boot.enable = true;
