@@ -66,6 +66,7 @@ in
   imports = [
     ./disko-config.nix
     ./docker.nix
+    ./dotlink.nix
     ./proxy.nix
     ./storage-data1.nix
     ./services.nix
