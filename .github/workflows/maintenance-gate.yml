@@ -25,75 +25,26 @@ jobs:
     name: maintenance gate
     runs-on: ubuntu-latest
     env:
-      CHINA_SUBSTITUTERS: >-
-        https://mirrors.ustc.edu.cn/nix-channels/store
-        https://cache.numtide.com
-        https://anyrun.cachix.org
-        https://hyprland.cachix.org
-        https://yazelix.cachix.org
-      CHINA_EXTRA_TRUSTED_PUBLIC_KEYS: >-
-        niks3.numtide.com-1:DTx8wZduET09hRmMtKdQDxNNthLQETkc/yaX7M4qK0g=
-        anyrun.cachix.org-1:pqBobmOjI7nKlsUMV25u9QHa9btJK65/C8vnO3p346s=
-        hyprland.cachix.org-1:a7pgxzMz7+chwVL3/pzj6jIBMioiJM7ypFP8PwtkuGc=
-        yazelix.cachix.org-1:ZgxIjQvaP0VTWL8Racx27mpUNzDJ97xC2y7QWYjmGNM=
       NIXPKGS_ALLOW_UNFREE: "1"
 
     steps:
       - uses: actions/checkout@v5
         with:
           ref: ${{ github.sha }}
-          fetch-depth: 0
 
       - uses: cachix/install-nix-action@v31
+        with:
+          install_url: https://releases.nixos.org/nix/nix-2.34.9/install
 
-      - name: Validate Renovate config
-        shell: bash
-        run: jq -e . renovate.json >/dev/null
+      - name: Evaluate 116 configuration and flake outputs
+        run: nix flake check --no-build --impure --no-update-lock-file --option allow-import-from-derivation false
 
-      - name: Check flake metadata
-        shell: bash
-        run: nix flake metadata --json --no-write-lock-file >/dev/null
-
-      - name: Check 116 cache gate
-        shell: bash
-        run: bash scripts/maint/ci-cache-gate.sh
-
-      - name: Report 116 cache gate diagnostics
-        if: ${{ always() }}
-        continue-on-error: true
+      - name: Evaluate all managed Home Manager activations
         shell: bash
         run: |
-          diagnostics="$RUNNER_TEMP/cache-gate-116-diagnostics"
-          if [[ -s "$diagnostics/summary.md" ]]; then
-            cat "$diagnostics/summary.md"
-            cat "$diagnostics/summary.md" >> "$GITHUB_STEP_SUMMARY"
-          else
-            echo "No cache gate summary was produced."
-          fi
-
-          for file in "$diagnostics"/*.policy.err; do
-            [[ -f "$file" ]] || continue
-            echo "## $(basename "$file") (last 40 lines)"
-            tail -n 40 "$file"
+          for user in ysun zky wangrongfeng; do
+            nix eval --raw --impure --no-update-lock-file --option allow-import-from-derivation false ".#nixosConfigurations.116.config.home-manager.users.$user.home.activationPackage.drvPath"
           done
 
-          for file in "$diagnostics"/*.dry-run.log; do
-            [[ -f "$file" ]] || continue
-            echo "## $(basename "$file") diagnostics (last 40 matching lines)"
-            grep -Ei 'error:|warning:|fatal:' "$file" | tail -n 40 || true
-          done
-
-      - name: Upload 116 cache gate diagnostics
-        if: ${{ always() }}
-        continue-on-error: true
-        uses: actions/upload-artifact@v7
-        with:
-          name: cache-gate-116-diagnostics-${{ github.run_attempt }}
-          path: |
-            ${{ runner.temp }}/cache-gate-116-diagnostics/*.log
-            ${{ runner.temp }}/cache-gate-116-diagnostics/*.err
-            ${{ runner.temp }}/cache-gate-116-diagnostics/*.json
-            ${{ runner.temp }}/cache-gate-116-diagnostics/*.tsv
-            ${{ runner.temp }}/cache-gate-116-diagnostics/*.txt
-            ${{ runner.temp }}/cache-gate-116-diagnostics/*.md
-          if-no-files-found: warn
+      - name: Check 116 cache configuration and headless contracts
+        run: nix build --impure --no-link --no-update-lock-file -L .#checks.x86_64-linux.host-116

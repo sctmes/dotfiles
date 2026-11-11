@@ -7,8 +7,7 @@
   imports = [ inputs.upstream.nixosModules.nixNetwork ];
 
   nix.settings.extra-substituters = [
-    "https://cache.nixos.org"
-    "https://yazelix.cachix.org"
+    "https://yazelix.cachix.org?priority=60"
   ];
 
   nix.settings.extra-trusted-public-keys = [

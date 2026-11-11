@@ -17,71 +17,83 @@
 
 ## 维护和版本来源
 
-日常维护入口只有一个：
+依赖更新通过人工 PR 审查；Renovate 已禁用，不再自动创建更新或自动合并。
+CI 的 `maintenance gate` 状态名称保留，但内容改为实际 `116` 配置、三个用户的
+Home Manager activation 和针对 headless/cache 配置的检查，不再按 cache miss
+拒绝改动，也不执行部署。
 
-```nu
-maint-switch
-```
+版本来源仍分层管理：
 
-`maint-switch` 消费当前仓库已经提交的状态，执行网络门控、构建和系统切换。它不负责更新 flake inputs；依赖更新本身也应按贡献流程提交和审查。
+- upstream-owned 工具、Codex 运行包选择、skills/MCP 和 headless 开发工具声明来自
+  `bioinformatist/dotfiles`。Codex CLI 来自 upstream 锁定的 `llm-agents.nix`，
+  配置、Improve 和 skills 来自 Codex Base。
+- `116` 的 `nixpkgs`、`home-manager`、`sops-nix`、`disko`、`impermanence`
+  以及 `dotlink` 和 downstream 服务继续由本仓库的 lock 管理。
+- `Yazelix/nova/edge` 仍是仅供 `ysun` 使用的 downstream 实验，安装
+  `yazelix-no-rio`，入口为 `yzx enter`；不会提供给其他用户或 upstream 通用配置。
 
-版本来源是混合的：
-
-- upstream-owned 工具、Codex 运行包选择、skills/MCP、headless 开发工具声明和维护门控策略来自 `bioinformatist/dotfiles`。Codex 独立 CLI 来自 upstream 锁定的 `llm-agents.nix` 社区包；配置、Improve 和 skills 来自 Codex Base。这些更新先进入 upstream，再通过更新本仓库的 `upstream` flake input 被 `116` 消费。
-- `116` 的基础 `nixpkgs`、`home-manager`、`sops-nix`、`disko`、`impermanence` 和 downstream 服务配置由本仓库自己的 flake lock 管理。
-- `Yazelix/nova/edge` 是 `116` 上仅供 `ysun` 使用的 downstream 实验。Home Manager 从锁定的 `edge` 安装适合 SSH/headless 环境的 `yazelix-no-rio`，入口是 `yzx enter`。`ysun` 作为手动激活的 headless canary，将它用于日常 SSH 工作并向 Nova 反馈；它不属于 upstream 通用配置，也不会提供给 `zky` 或 `wangrongfeng`。
-
-`upstream` input 由 Renovate 每 4 小时检查一次。`yazelix` 每天在 UTC
-16:00–19:59（Asia/Shanghai 次日 00:00–03:59）的 eligibility window 内检查。
-只有这两个 input 可以自动更新；Yazelix PR 通过现有 maintenance gate 后可以
-automerge。gate 会对 public Yazelix 做真实求值；只有迁移 PR 的 legacy base
-仍声明 `yazelix-next` 时才使用最小临时 stub。其他 downstream-owned inputs
-继续禁用自动更新。
-
-Renovate automerge 只合并 lock PR，绝不会 build、rebuild 或部署 `116`。真正的构建
-和切换仍由运维用户从已审查的干净 `main` 在目标机器上手动执行 `maint-switch`；
-canary 激活权不会交给 Renovate 或 CI。
-
-更新 upstream 时只更新对应 flake input：
+只更新所需 input，不顺便刷新所有依赖：
 
 ```nu
 nix flake update upstream
 git diff flake.lock
 git add flake.lock
 git commit -m "chore: update upstream dotfiles"
-maint-switch --no-pull
 ```
 
-本仓库的 `scripts/maint/policy-overrides.json` 只声明公司专属的维护门控规则。
-`maint-switch --repo /home/ysun/github.com/sctmes/dotfiles` 在新系统激活前读取 flake
-输出的 `lib.maintenancePolicy`；该有效策略由锁定的 upstream 共享基线和本仓库的窄
-overlay 合成，不需要复制 upstream 的完整 policy。
-
-如果 `maint-switch` 因共享的轻量生成式 glue derivation 被拦住，先修 upstream
-policy，再更新本仓库的 `upstream` input；公司专属 derivation 才加入
-`scripts/maint/policy-overrides.json`。不要直接绕过 gate，也不要把 kernel、driver、
-Hyprland、GCC/Rust toolchain、Chromium/Electron 等重组件加入 allowlist。
-
-网络问题需要按路径拆分：Nix cache、GitHub release/direct fetch、npm registry 或
-node-gyp、Cargo registry 和运行时代理不是同一个问题。
-
-Numtide 官方缓存和 Yazelix Cachix 的 URL、公开签名公钥均由主机配置声明。
-如果当前运行的 Nix daemon 尚未信任其中所需的缓存，普通用户临时指定它也不会生效。
-合并并检查干净 `main` 后，可由运维用户使用 root 条件式地 bootstrap 目标 closure：
+提交 PR、审查并合并后，由运维用户在目标机器上显式准备干净的最新 `main`，
+再执行 `maint-switch`。该命令只消费当前 checkout，不会 pull、更新 inputs 或改写
+lock，不再支持 `--no-pull`。先完整构建，再通过 `nixos-rebuild --store-path`
+激活同一个 closure。构建失败不激活；kernel 或 NVIDIA userspace 变化时自动改用
+boot-only activation，安排维护窗口并另行确认 reboot，不能把 boot 成功当成运行系统已更新。
 
 ```nu
-sudo nix build --no-link --print-out-paths --option extra-substituters 'https://cache.numtide.com https://yazelix.cachix.org' --option extra-trusted-public-keys 'niks3.numtide.com-1:DTx8wZduET09hRmMtKdQDxNNthLQETkc/yaX7M4qK0g= yazelix.cachix.org-1:ZgxIjQvaP0VTWL8Racx27mpUNzDJ97xC2y7QWYjmGNM=' .#nixosConfigurations.116.config.system.build.toplevel
-maint-switch --no-pull
+git switch main
+git pull --ff-only
+git status --short
+maint-switch
 ```
 
-如果 live daemon 已信任所需缓存，则跳过显式 bootstrap，仍由运维用户在审查后手动
-执行 `maint-switch --no-pull`。`yazelix-no-rio` 作为 capability variant 当前不会获得完整
-`yazelix-edge` 的 channel-qualified identity，因此针对 `edge` 的 Nova 报告必须同时附上 `flake.lock` 中精确的锁定 revision
-和经过脱敏的复现上下文；可用 `open flake.lock | get nodes.yazelix.locked.rev` 读取 revision。
+`git status --short` 必须为空，且 HEAD 必须是已审查的目标提交。
+多用户服务或 GPU 负载活跃时先协调切换；需要只准备下次启动时使用 `maint-switch --boot`。
 
-后续 Yazelix 更新以 Renovate PR、maintenance gate 和对应 `flake.lock` 变更为审查及
-回退边界；需要回退时恢复上一份已审查的 lock/main 状态，再由运维用户构建和切换。
-不要绕过 gate，也不要把自动合并理解为自动部署。
+### 首次迁移旧 helper
+
+旧 shell 中的 `maint-switch` 仍会调用已经退休的 cache gate；只删除 CI 不会更新
+正在运行的 helper。首次部署本次迁移时，从当前已审查 lock 获取 upstream 路径，
+在临时 Nushell 中加载新 helper，仍保留完整构建和 kernel/NVIDIA 风险判断：
+
+```nu
+let repo = (pwd)
+let upstream = (nix flake archive --json --no-update-lock-file | from json | get inputs.upstream.path)
+nu --no-config-file -c $'source ($upstream)/home/shell/nushell/maint.nu; maint-switch --repo "($repo)"'
+```
+
+这里复用已安装的 `dotfiles/maint.nuon` 主机设置；`--repo` 显式选择当前 checkout。
+激活新 Home Manager 配置后重新打开 Nushell，后续直接使用 `maint-switch`。
+如果此次是 boot-only activation，运行环境和旧 helper 要等另行 reboot 后才改变。
+
+### Cache 和更新边界
+
+继承 upstream 的明确优先级：USTC `priority=10`，官方 `cache.nixos.org`
+`priority=40`，headless Numtide `priority=60`；downstream 的 Yazelix Cachix
+同为 `priority=60`。数字越小越优先。安装脚本也采用此顺序；不复制 workstation-only
+缓存，不重复加入不带 priority 的官方缓存。保持 `require-sigs = true` 和现有公开
+签名公钥。cache miss 可以本机构建，是否执行长时间构建由运维用户根据负载判断，
+不再通过 derivation 名称 allowlist 决定。
+
+此次更新只刷新 `upstream` 及其传递 inputs。downstream 顶层 inputs 保持原锁定版本，
+但继承的 Codex CLI 会更新；Helix/Yazi 从 upstream 独立工具包集合迁回 downstream
+`nixpkgs`，可能出现版本变化。upstream 的桌面 inputs 仍出现在 lock 图中，
+不等于为 `116` 启用桌面或构建所有桌面包。更轻的 headless flake 边界属于后续独立工作。
+
+如果 live daemon 尚未信任 Numtide/Yazelix，先由运维用户检查已声明的 URL 和公钥，
+不要关闭签名检查。网络问题按 Nix cache、GitHub release/direct fetch、npm/node-gyp、
+Cargo 和运行时代理分别诊断。
+
+回退边界是已审查的 `flake.lock` 和 main 提交；恢复上一份已审查状态后重新构建、
+检查风险并激活。针对 Yazelix `edge` 的问题报告同时附上
+`open flake.lock | get nodes.yazelix.locked.rev` 和脱敏复现信息，不把 channel 名当作精确版本。
 
 ## 责任边界
 

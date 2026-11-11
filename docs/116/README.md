@@ -41,7 +41,7 @@ maint-switch
 `/run/current-system/sw/bin/cat`；随当前系统切换，避免升级和 GC 后仍引用旧
 store 路径。不启用完整 FHS 环境，也不强制覆盖已有路径。
 
-由运维用户在审核通过的干净 checkout 中执行 `maint-switch --no-pull`。
+由运维用户在审核通过的干净 checkout 中执行 `maint-switch`。
 激活前应确认 `/bin/cat` 既不存在也不是悬空链接；如已有路径，先查明归属。
 激活后检查链接及读取行为，再从桌面客户端打开一个无关测试文件，最后重试
 原文章入口。无需为此重启业务服务。
@@ -60,7 +60,7 @@ printf 'codex-cat-check\n' | /bin/cat
 
 ### Yazelix Nova
 
-`116` 只为 `ysun` 从 `Yazelix/nova/edge` 安装适合 SSH/headless 环境的 `yazelix-no-rio`，入口是 `yzx enter`。`ysun` 将它作为日常 SSH 工作的 edge canary，但每次更新仍由运维用户审查后手动激活；`zky`、`wangrongfeng` 和 upstream 通用配置不会获得 Yazelix 或通用 Zellij。Renovate、maintenance gate、条件式 Cachix bootstrap、手动应用和 lock-based rollback 的责任边界见 [CONTRIBUTING.md](../../CONTRIBUTING.md)。
+`116` 只为 `ysun` 从 `Yazelix/nova/edge` 安装适合 SSH/headless 环境的 `yazelix-no-rio`，入口是 `yzx enter`。`ysun` 将它作为日常 SSH 工作的 edge canary，但每次更新仍由运维用户审查后手动激活；`zky`、`wangrongfeng` 和 upstream 通用配置不会获得 Yazelix 或通用 Zellij。手动依赖更新、配置检查、首次迁移、手动应用和 lock-based rollback 的责任边界见 [CONTRIBUTING.md](../../CONTRIBUTING.md)。
 
 Nova 管理的 Atuin 只在本机记录历史并保留 `Ctrl+r` 搜索，不登录账户或同步；Up-arrow 仍使用 shell 原生历史。进入敏感目录工作前应先检查 history filters。Carapace 为 Nova 管理的 Nushell 提供外部命令补全，本身不保存命令历史。Ratconfig 是 `yzx config` 的 UI 和配置校验层；当前 downstream Home Manager 只选择 `yazelix-no-rio` package，不接管 Nova 的详细 overrides。
 
@@ -140,7 +140,7 @@ nu ./scripts/install-116.nu root@192.168.0.116 --proxy http://<lan-proxy>:<port>
 5. 应用仓库声明的系统配置，再显式重跑 Mihomo bootstrap unit，确保 controller 仍使用 `sops` 的 `mihomo-controller-secret`，不在日志/终端打印 secret：
 
    ```nu
-   nu --login -c 'maint-switch --no-pull --repo /home/ysun/github.com/sctmes/dotfiles'
+   nu --login -c 'maint-switch --repo /home/ysun/github.com/sctmes/dotfiles'
    sudo systemctl restart mihomo-config-bootstrap.service
    ```
 
@@ -181,7 +181,7 @@ nu ./scripts/install-116.nu root@192.168.0.116 --proxy http://<lan-proxy>:<port>
 11. 如需回退 Mihomo 路由策略，按以下顺序操作：
 
     1. 恢复此前已审核的仓库源码/检查点。
-    2. 从该版本运行 `nu --login -c 'maint-switch --no-pull --repo /home/ysun/github.com/sctmes/dotfiles'`。
+    2. 从该版本运行 `nu --login -c 'maint-switch --repo /home/ysun/github.com/sctmes/dotfiles'`。
     3. 用本次备份（`$rollback_dir/config.yaml`）恢复运行时 `/persist/mihomo/config.yaml`，并保留 owner、group 和 mode，确认 `WestWorld Auto` 与 `YToo Backup` 已恢复到原策略。
        固定文件 `/persist/mihomo/config.yaml.before-westworld-japan-policy` 可能过期，不直接作为本次默认回退来源。
     4. 运行 `docker exec mihomo /mihomo -t -d /root/.config/mihomo -f /root/.config/mihomo/config.yaml` 验证配置。
