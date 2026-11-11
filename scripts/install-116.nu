@@ -4,9 +4,9 @@ def main [
   target: string = "root@192.168.0.116",
   --extra-dir: string = "/tmp/sctmes-116-extra",
   --proxy: string,
-  --substituters: string = "https://mirrors.ustc.edu.cn/nix-channels/store https://cache.nixos.org",
-  --extra-substituters: string = "https://yazelix.cachix.org",
-  --extra-trusted-public-keys: string = "yazelix.cachix.org-1:ZgxIjQvaP0VTWL8Racx27mpUNzDJ97xC2y7QWYjmGNM=",
+  --substituters: string = "https://mirrors.ustc.edu.cn/nix-channels/store?priority=10 https://cache.nixos.org?priority=40",
+  --extra-substituters: string = "https://cache.numtide.com?priority=60 https://yazelix.cachix.org?priority=60",
+  --extra-trusted-public-keys: string = "niks3.numtide.com-1:DTx8wZduET09hRmMtKdQDxNNthLQETkc/yaX7M4qK0g= yazelix.cachix.org-1:ZgxIjQvaP0VTWL8Racx27mpUNzDJ97xC2y7QWYjmGNM=",
   --phases: string = "kexec,disko,install,reboot",
 ] {
   if ($proxy | is-empty) {

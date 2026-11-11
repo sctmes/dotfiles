@@ -30,6 +30,7 @@
 
   outputs =
     inputs@{
+      self,
       nixpkgs,
       disko,
       home-manager,
@@ -45,14 +46,44 @@
         inherit inputs;
         username = "ysun";
       };
-      maintenancePolicy = upstream.lib.extendMaintenancePolicy upstream.lib.maintenancePolicyBase (
-        builtins.fromJSON (builtins.readFile ./scripts/maint/policy-overrides.json)
-      );
     in
     {
-      lib = {
-        inherit maintenancePolicy;
-      };
+      checks.${system}.host-116 =
+        let
+          config = self.nixosConfigurations."116".config;
+          homes = config.home-manager.users;
+        in
+        assert config.nix.settings.require-sigs;
+        assert
+          config.nix.settings.substituters == [
+            "https://mirrors.ustc.edu.cn/nix-channels/store?priority=10"
+            "https://cache.nixos.org?priority=40"
+          ];
+        assert builtins.elem "https://cache.numtide.com?priority=60" config.nix.settings.extra-substituters;
+        assert builtins.elem "https://yazelix.cachix.org?priority=60"
+          config.nix.settings.extra-substituters;
+        assert builtins.elem "cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY="
+          config.nix.settings.trusted-public-keys;
+        assert nixpkgs.lib.all (key: builtins.elem key config.nix.settings.extra-trusted-public-keys) [
+          "niks3.numtide.com-1:DTx8wZduET09hRmMtKdQDxNNthLQETkc/yaX7M4qK0g="
+          "yazelix.cachix.org-1:ZgxIjQvaP0VTWL8Racx27mpUNzDJ97xC2y7QWYjmGNM="
+        ];
+        assert nixpkgs.lib.all
+          (name: !(nixpkgs.lib.attrByPath [ "programs" "yazelix" "enable" ] false homes.${name}))
+          [
+            "zky"
+            "wangrongfeng"
+          ];
+        assert !config.services.xserver.enable;
+        assert homes.ysun.dotfiles.maint.enable;
+        assert homes.ysun.dotfiles.maint.host == "116";
+        assert homes.ysun.programs.yazelix.package == inputs.yazelix.packages.${system}.yazelix-no-rio;
+        assert nixpkgs.lib.all (name: homes.${name}.programs.codexBase.enable) [
+          "ysun"
+          "zky"
+          "wangrongfeng"
+        ];
+        pkgs.runCommand "host-116-check" { } "touch $out";
 
       devShells.${system} = {
         reactive-resume = pkgs.mkShell {
