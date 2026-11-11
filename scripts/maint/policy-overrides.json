@@ -13,9 +13,14 @@
     "-label-studio-compose.yml.drv",
     "-enforce-mihomo-routing-policy.drv",
     "-yzx-zellij.drv",
-    "-yazelix-no-rio.drv"
+    "-yazelix-no-rio.drv",
+    "-dotlink-bin-0.14.3.drv",
+    "-dotlink-116-curl.drv",
+    "-dotlink-116-git.drv",
+    "-dotlink-116-profile.json.drv"
   ],
   "allowedDirectFetchMarkers": [
-    "-Futu_OpenD_"
+    "-Futu_OpenD_",
+    "-dotlink-linux-x86_64-0.14.3.drv"
   ]
 }

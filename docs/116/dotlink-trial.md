@@ -57,3 +57,9 @@
 - Mihomo 容器 StartedAt 在部署前后均为 `2026-10-29T05:45:46.444499719Z`，未被重启或修改。
 - 私有 ChatGPT plugin `dotlink 116 (unrestricted)` 已注册并连接，UI 确认 connected，发现全部 16 个工具（9 write / 7 read）。Plugin ID: `plugin_asdk_app_6af3ba46da388191a1caf72d6ea4a6f5`。父会话已通过新 connector 成功读取 `/home/ysun/dotlink-workspace/dotlink-e2e-gz9uqey2/read-check.txt`，确认端到端读取；ChatGPT 端到端 shell 命令待独立核实，本地 stdio 测试不等同于该验证。
 - 改动保存在本地功能分支；尚未 push/合入 main。之后从未包含此改动的 main rebuild 会移除此服务，发布 PR 和合并需另行确认。
+
+## CI 二进制来源（2026-11-11）
+
+PR 的干净 runner 检查发现上游源码包引入未缓存的 Rust/Cargo 构建。服务改用同版本 v0.14.3 官方 `dotlink-linux-x86_64` 静态发布物，SHA-256 固定为 `ccaef91f3f086d5e0e7003382862dd1347eaa36c0b44c98ebcbee9bda7ccf2cd`；上游 module revision 保持不变。仅支持当前 116 的 x86_64-linux。
+
+维护策略只声明该精确版本的下载、二进制安装包装，以及 116 专属 CA 包装器和非秘密 profile 生成；不放行 Rust、Cargo 或其他重型源码构建。升级版本需同时审查发布物校验值和精确版本声明。

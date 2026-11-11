@@ -5,16 +5,38 @@
   ...
 }:
 let
+  # 固定上游发布的静态二进制，避免在维护时编译 Rust/Cargo 闭包。
+  dotlinkBinary = pkgs.stdenvNoCC.mkDerivation {
+    pname = "dotlink-bin";
+    version = "0.14.3";
+    src = pkgs.fetchurl {
+      url = "https://github.com/abird-ai/dotlink/releases/download/v0.14.3/dotlink-linux-x86_64";
+      name = "dotlink-linux-x86_64-0.14.3";
+      hash = "sha256-zK75Hz8IbV4OcAM4KGLdE0fqo2wLRMmOvL7pvafM8s0=";
+    };
+    dontUnpack = true;
+    dontStrip = true;
+    installPhase = ''
+      runHook preInstall
+      install -Dm755 "$src" "$out/bin/dotlink"
+      runHook postInstall
+    '';
+    meta = {
+      mainProgram = "dotlink";
+      platforms = [ "x86_64-linux" ];
+      license = lib.licenses.mit;
+    };
+  };
   caBundle = "${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt";
   # Bubblewrap 会清理父进程环境；工具包装器在沙箱内部设置 CA。
-  curlWithCa = pkgs.writeShellScriptBin "curl" ''
+  curlWithCa = (pkgs.writeShellScriptBin "curl" ''
     export CURL_CA_BUNDLE=${caBundle}
     exec ${pkgs.curl}/bin/curl "$@"
-  '';
-  gitWithCa = pkgs.writeShellScriptBin "git" ''
+  '').overrideAttrs { name = "dotlink-116-curl"; };
+  gitWithCa = (pkgs.writeShellScriptBin "git" ''
     export GIT_SSL_CAINFO=${caBundle}
     exec ${pkgs.git}/bin/git "$@"
-  '';
+  '').overrideAttrs { name = "dotlink-116-git"; };
   profileFile = pkgs.writeText "dotlink-116-profile.json" (
     builtins.toJSON (
       ({
@@ -44,6 +66,7 @@ in
   # 用户已明确确认 unrestricted 模式及 ysun 的持久 root-equivalent 访问。
   services.dotlink = {
     enable = true;
+    package = dotlinkBinary;
     user = "ysun";
     workingDirectory = "/home/ysun/dotlink-workspace";
     credentials.runtimeApiKeyFile = "/run/secrets/dotlink-runtime-api-key";
