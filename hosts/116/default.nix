@@ -68,6 +68,7 @@ in
     ./docker.nix
     ./dotlink.nix
     ./proxy.nix
+    ./python-compat.nix
     ./storage-data1.nix
     ./services.nix
     ./users.nix
