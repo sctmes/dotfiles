@@ -50,7 +50,6 @@
 用户在明确获知关闭 Bubblewrap、开放全机读写与 shell、以及现有 ysun NOPASSWD sudo 带来的持久 root-equivalent 权限后，确认启用并注册私有 ChatGPT connector。
 
 - `hosts/116/dotlink.nix` 声明式追加 `--unrestricted`，并将 `/run/wrappers`、ysun profile 与 system profile 加入服务 PATH；以 ysun 运行。原 scoped profile 作为未带该参数时的默认值保留，运行时由 CLI 明确覆盖。
-- 最终源码补充 SOPS secret 的 `restartUnits = [ "dotlink.service" ];`，后续轮换 runtime key 时重启服务，以刷新 systemd LoadCredential 副本。该补充已通过独立审查、maintenance gate、完整构建与 dry-activate，但尚未部署；现有 unrestricted 服务不受影响，需运维确认后切换最终构建。
 - 未创建新凭据或开放新监听端口；仍使用既有 OpenAI Secure MCP Tunnel、SOPS 和 systemd LoadCredential。
 - maintenance gate（workflow_dispatch 比较模式）、完整 toplevel 构建和 dry-activate 均通过；dry-activate 仅需重启 dotlink，已通过标准 nixos-rebuild switch 部署。
 - 服务日志确认 `Access unrestricted read+write`、`Sandbox disabled` 和 `Connected — ready`。enabled 状态及 boot system profile 已核实；未执行整机重启。

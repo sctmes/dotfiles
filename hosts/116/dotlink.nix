@@ -75,7 +75,6 @@ in
     key = "dotlink-runtime-api-key";
     owner = "ysun";
     mode = "0400";
-    restartUnits = [ "dotlink.service" ];
   };
   systemd.tmpfiles.rules = lib.optionals config.services.dotlink.enable [
     "d /home/ysun/dotlink-workspace 0700 ysun users -"
