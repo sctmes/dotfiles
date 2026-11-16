@@ -1,6 +1,8 @@
 # 116 dotlink 接入（现为 unrestricted）
 
-固定版本 v0.14.3，commit `84cd9b7cbda48e327e15781c771e162fb8820ae7`。
+当前声明与升级验收约定见文末 v0.17.1 章节；下文早期记录保留历史语境。
+
+初次部署版本 v0.14.3，commit `84cd9b7cbda48e327e15781c771e162fb8820ae7`。
 本次配置位于独立 worktree，基于已核实的 remote main `475a41285afbbc76945e19e743a39eaa603ce5f6`。用户已创建并通过隐藏终端输入导入 runtime key，SOPS 加密与解密格式检查通过。已创建用户批准的隧道并完成系统切换，服务 enabled/running，日志确认 `Connected — ready`。
 
 ## 首轮权限范围（历史）
@@ -63,3 +65,42 @@
 PR 的干净 runner 检查发现上游源码包引入未缓存的 Rust/Cargo 构建。服务改用同版本 v0.14.3 官方 `dotlink-linux-x86_64` 静态发布物，SHA-256 固定为 `ccaef91f3f086d5e0e7003382862dd1347eaa36c0b44c98ebcbee9bda7ccf2cd`；上游 module revision 保持不变。仅支持当前 116 的 x86_64-linux。
 
 维护策略只声明该精确版本的下载、二进制安装包装，以及 116 专属 CA 包装器和非秘密 profile 生成；不放行 Rust、Cargo 或其他重型源码构建。升级版本需同时审查发布物校验值和精确版本声明。
+
+## v0.17.1 更新与适配收敛（2026-11-16）
+
+当前声明固定官方 v0.17.1 静态二进制和对应 module commit
+`07ca25feaece21857e02aa44462ce7fa7dde6af9`。发布物 SHA-256 为
+`a46eded0529b89e215e377b83990d0a899ebba3e7e3c8047ee46e46de6f0ab6c`。
+这里只更新 dotlink input，不刷新其他锁定依赖。
+
+- 删除手工 profile JSON、schema version、runtime directory 和 staging 声明，改用
+  原生 `services.dotlink.settings`。上游负责 schema 12 和 `/run/dotlink/config.jsonc`
+  的启动时复制，目录 0700、文件 0400。密钥仍只通过 SOPS 和 LoadCredential。
+- 删除 scoped 阶段为 Bubblewrap 清理环境设计的 curl/git CA 包装器；当前明确使用
+  unrestricted，直接提供 curl/git 并保留服务 `SSL_CERT_FILE`/`NIX_SSL_CERT_FILE`。
+  若以后重新启用沙箱，必须重新验证 CA 传播，不能沿用本结论。
+- 保留官方 release binary 打包，避免 Rust 源码构建；保留 unrestricted ExecStart 和
+  用户/系统 PATH，这些仍是 116 的功能选择，不是待删除的临时兼容修复。
+- `/home` 的持久卷覆盖工作目录和 XDG 状态；凭据解密入口未改变。沿用原生 systemd
+  重启退避，不新增 watchdog、自动升级或凭据轮换服务。
+
+### 升级与验收边界
+
+v0.17 删除 `job_start`，后台 shell 改用 `bash(background: true)`；`job_ack(job_id)`
+现在释放两个输出流。升级后应刷新客户端工具定义，并用新 schema 验证读取、shell、
+后台输出/清理和 HTTPS。不能把旧工具列表可见视为新接口验证通过。
+
+重启前确认没有需保留的 dotlink 子作业。`KillMode=control-group` 会终止整个服务子树，
+已有作业不能假定跨服务重启继续。激活命令应在独立 systemd unit 中执行，而不是依赖
+将被重启的 dotlink shell 自己完成。保留上一个系统 closure 作为回退，先构建并检查
+变更范围，再激活，最后从 ChatGPT connector 重新调用核实。
+
+v0.17.1 的原生 staging 命令仍以 `-` 忽略复制失败；上游 main 已继续调整此行为。
+本配置不为尚未发布的实现复制一套 staging。使用不可变 closure 内源文件，并在
+升级验收时核对运行配置的 schema、权限和服务状态；主机重启验证需单独安排。
+
+本地预部署验证：v0.17.1 与 module 生成的 schema 12 配置通过真实 stdio MCP
+初始化、15 个工具发现、ysun unrestricted shell、curl/git HTTPS、后台输出读取与
+`job_ack(job_id)` 双流释放测试。flake check、三个 Home Manager activation 求值、
+host-116 check、完整 toplevel 构建通过；dry-activate 只列出 dotlink 服务重启，
+kernel/kernel-modules 未变化。这些不等同于 ChatGPT 新 schema 或整机 reboot 已验收。

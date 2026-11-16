@@ -2,7 +2,7 @@
   description = "SCTMES-managed NixOS hosts";
 
   inputs = {
-    dotlink.url = "github:abird-ai/dotlink/84cd9b7cbda48e327e15781c771e162fb8820ae7";
+    dotlink.url = "github:abird-ai/dotlink/07ca25feaece21857e02aa44462ce7fa7dde6af9";
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     disko = {
       url = "github:nix-community/disko";
