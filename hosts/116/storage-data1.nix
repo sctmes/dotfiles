@@ -16,5 +16,7 @@
 
   systemd.tmpfiles.rules = [
     "d /data1/backups 0755 root root -"
+    # Access ACL on the mounted root only; do not change ACLs beneath it.
+    "a+ /data1 - - - - u:29981:---"
   ];
 }
