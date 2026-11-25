@@ -48,6 +48,13 @@ in
 
   users.groups.lucca.gid = 29981;
 
+  # OpenSSH rejects helpers below the group-writable Nix store. Install a
+  # regular root-owned file so its resolved path also passes StrictModes.
+  environment.etc."ssh/lucca-authorized-keys" = {
+    source = luccaAuthorizedKeys;
+    mode = "0555";
+  };
+
   services.openssh.extraConfig = ''
     # Keep the existing ingress and SSH settings for other users.
     Match User lucca
@@ -56,7 +63,7 @@ in
       PasswordAuthentication no
       KbdInteractiveAuthentication no
       AuthorizedKeysFile none
-      AuthorizedKeysCommand ${luccaAuthorizedKeys}
+      AuthorizedKeysCommand /etc/ssh/lucca-authorized-keys
       AuthorizedKeysCommandUser lucca
   '';
 }
