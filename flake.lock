@@ -106,11 +106,11 @@
         "stop-slop": "stop-slop"
       },
       "locked": {
-        "lastModified": 1795156523,
-        "narHash": "sha256-za32VbyFdhpxXyb3IaRFt5QwVasMClyI6l53vcunakM=",
+        "lastModified": 1795596395,
+        "narHash": "sha256-bTqhB/HvIBwAHGwbJWrE1CFn/lbdX/Gsz89vGjL+9bs=",
         "owner": "bioinformatist",
         "repo": "codex-base",
-        "rev": "243067a049e53c0005fcb767da30925227f5af05",
+        "rev": "255ee2d079a722db549e7a8f55e8365d1ac244d3",
         "type": "github"
       },
       "original": {
@@ -1855,11 +1855,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1795158282,
-        "narHash": "sha256-rbaOPtmUSBX5ichpfIKWyfc1ldEm/PP/o2W/mWw+BC4=",
+        "lastModified": 1795597013,
+        "narHash": "sha256-mqCHmgm6/YSOCcSOuxzEinDX9HMEe1b0rfZdEspEDgA=",
         "owner": "bioinformatist",
         "repo": "dotfiles",
-        "rev": "fcc5f155646cc6a73430dbb05a28d8363a8cd60e",
+        "rev": "731703879d65ace0daba1a43e936c713e54538ad",
         "type": "github"
       },
       "original": {
