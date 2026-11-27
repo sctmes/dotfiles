@@ -72,7 +72,6 @@
           (name: !(nixpkgs.lib.attrByPath [ "programs" "yazelix" "enable" ] false homes.${name}))
           [
             "zky"
-            "wangrongfeng"
           ];
         assert !config.services.xserver.enable;
         assert homes.ysun.dotfiles.maint.enable;
@@ -81,7 +80,6 @@
         assert nixpkgs.lib.all (name: homes.${name}.programs.codexBase.enable) [
           "ysun"
           "zky"
-          "wangrongfeng"
         ];
         pkgs.runCommand "host-116-check" { } "touch $out";
 
@@ -120,10 +118,6 @@
             home-manager.users.zky = import ./homes/headless-dev {
               inherit inputs;
               username = "zky";
-            };
-            home-manager.users.wangrongfeng = import ./homes/headless-dev {
-              inherit inputs;
-              username = "wangrongfeng";
             };
           }
           inputs.dotlink.nixosModules.default

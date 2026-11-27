@@ -21,15 +21,6 @@ in
     ];
   };
 
-  users.users.wangrongfeng = {
-    isNormalUser = true;
-    shell = pkgs.nushell;
-    extraGroups = [ "docker" ];
-    openssh.authorizedKeys.keys = [
-      "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOjIeu5WyAytBPnt/23r7sszhhL5botEl26JNAAEg7Ce ivanwang@sctmes.com"
-    ];
-  };
-
   users.users.lucca = {
     isNormalUser = true;
     # /data1's on-disk ACL uses this identity across reinstall.

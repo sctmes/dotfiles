@@ -42,7 +42,7 @@ jobs:
       - name: Evaluate all managed Home Manager activations
         shell: bash
         run: |
-          for user in ysun zky wangrongfeng; do
+          for user in ysun zky; do
             nix eval --raw --impure --no-update-lock-file --option allow-import-from-derivation false ".#nixosConfigurations.116.config.home-manager.users.$user.home.activationPackage.drvPath"
           done
 

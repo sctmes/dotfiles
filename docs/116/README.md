@@ -6,14 +6,14 @@
 
 `116` 通过本仓库锁定的 `upstream` flake input 继承 headless 开发工具集。Codex 独立 CLI 来自 upstream 锁定的 `llm-agents.nix` 社区包；配置、Improve 和共享 skills 来自 Codex Base，并由 `bioinformatist/dotfiles` 导出。Improve 和 doctor 使用同一份 CLI，服务器不安装桌面应用。使用说明见 Codex Base 的[中文使用文档](https://github.com/bioinformatist/codex-base/blob/main/README.zh-CN.md)、[能力目录](https://github.com/bioinformatist/codex-base/blob/main/docs/capabilities.zh-CN.md)和[配置说明](https://github.com/bioinformatist/codex-base/blob/main/docs/configuration.zh-CN.md)。
 
-`proxyRecovery` 策略由 Codex Base 提供，downstream 在两个 Home Manager 入口通过 `dotfiles.codex.proxyRecovery.enable = lib.mkDefault true;` 启用：`homes/ysun/default.nix` 管理 `ysun` 的个人配置；`homes/headless-dev/default.nix` 管理共享开发用户 `zky` 和 `wangrongfeng` 的配置。用户可以在自己的配置中设置 `dotfiles.codex.proxyRecovery.enable = false;` 关闭该策略。
+`proxyRecovery` 策略由 Codex Base 提供，downstream 在两个 Home Manager 入口通过 `dotfiles.codex.proxyRecovery.enable = lib.mkDefault true;` 启用：`homes/ysun/default.nix` 管理 `ysun` 的个人配置；`homes/headless-dev/default.nix` 管理共享开发用户 `zky` 的配置。用户可以在自己的配置中设置 `dotfiles.codex.proxyRecovery.enable = false;` 关闭该策略。
 
 Codex 配置变更经过不同阶段：先由 upstream 合并，再由本仓库更新 `flake.lock` 消费该版本，然后由运维用户 rebuild `116`。upstream 合并或下游锁更新本身都不会部署配置；rebuild 更新安装文件，但不会让已连接到旧后台的 Codex 客户端自动切换。对于通过客户端连接 SSH 后台的会话，还需受控重连后台，并在新会话中确认加载的配置。
 
 ## 用户和权限
 
 - `ysun` 是当前运维用户，负责 secrets、重装、系统 rebuild 和生产服务重启。
-- `zky` 和 `wangrongfeng` 是研究用户，有 Docker 权限，没有 sudo。
+- `zky` 是研究用户，有 Docker 权限，没有 sudo。
 - 长期依赖和服务变更都应该通过本仓库 PR 进入声明式配置，不要依赖手工安装。
 
 ## 日常使用
@@ -60,7 +60,7 @@ printf 'codex-cat-check\n' | /bin/cat
 
 ### Yazelix Nova
 
-`116` 只为 `ysun` 从 `Yazelix/nova/edge` 安装适合 SSH/headless 环境的 `yazelix-no-rio`，入口是 `yzx enter`。`ysun` 将它作为日常 SSH 工作的 edge canary，但每次更新仍由运维用户审查后手动激活；`zky`、`wangrongfeng` 和 upstream 通用配置不会获得 Yazelix 或通用 Zellij。手动依赖更新、配置检查、首次迁移、手动应用和 lock-based rollback 的责任边界见 [CONTRIBUTING.md](../../CONTRIBUTING.md)。
+`116` 只为 `ysun` 从 `Yazelix/nova/edge` 安装适合 SSH/headless 环境的 `yazelix-no-rio`，入口是 `yzx enter`。`ysun` 将它作为日常 SSH 工作的 edge canary，但每次更新仍由运维用户审查后手动激活；`zky` 和 upstream 通用配置不会获得 Yazelix 或通用 Zellij。手动依赖更新、配置检查、首次迁移、手动应用和 lock-based rollback 的责任边界见 [CONTRIBUTING.md](../../CONTRIBUTING.md)。
 
 Nova 管理的 Atuin 只在本机记录历史并保留 `Ctrl+r` 搜索，不登录账户或同步；Up-arrow 仍使用 shell 原生历史。进入敏感目录工作前应先检查 history filters。Carapace 为 Nova 管理的 Nushell 提供外部命令补全，本身不保存命令历史。Ratconfig 是 `yzx config` 的 UI 和配置校验层；当前 downstream Home Manager 只选择 `yazelix-no-rio` package，不接管 Nova 的详细 overrides。
 
