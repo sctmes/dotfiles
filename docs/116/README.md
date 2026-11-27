@@ -258,3 +258,7 @@ gh auth login
 ```nu
 nix --option extra-substituters https://eon-yazelix.cachix.org develop
 ```
+
+### Lucca 的 Tailscale SSH
+
+`lucca-tailscale-ingress.service` 在 `tailscaled` 启动前安装独立过滤表。仅允许 Lucca 当前工作站的 Tailscale IPv4/IPv6 直连宿主机 TCP 22，阻断其他 Tailnet 入站和转发。OpenSSH 仍要求其 SSH 公钥；公网转发、LAN 和 Docker 规则不改。换设备时先更新该记录；未验证过滤生效前不要关闭 `shields-up`。

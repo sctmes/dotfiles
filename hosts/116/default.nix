@@ -64,6 +64,7 @@ let
 in
 {
   imports = [
+    ./lucca-tailscale.nix
     ./disko-config.nix
     ./docker.nix
     ./dotlink.nix
