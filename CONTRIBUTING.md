@@ -18,7 +18,7 @@
 ## 维护和版本来源
 
 依赖更新通过人工 PR 审查；Renovate 已禁用，不再自动创建更新或自动合并。
-CI 的 `maintenance gate` 状态名称保留，但内容改为实际 `116` 配置、三个用户的
+CI 的 `maintenance gate` 状态名称保留，但内容改为实际 `116` 配置、两个用户的
 Home Manager activation 和针对 headless/cache 配置的检查，不再按 cache miss
 拒绝改动，也不执行部署。
 
