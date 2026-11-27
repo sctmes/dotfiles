@@ -250,3 +250,11 @@ gh auth login
 保存后文件应是 SOPS 加密内容。不要把 Context7 API key 加进共享 `secrets/hosts/116.yaml`，也不要提交明文 key。
 
 审查这类 PR 时只看：用户名、文件名、SOPS 加密是否正确，以及 API key 是否只路由给同一个 Unix 用户。
+
+### Eon 构建缓存（按需）
+
+116 允许普通用户在 Eon 仓库内按需使用独立的 Eon Cachix。它不改变全机默认缓存，不给用户 Nix 信任权限，并保持签名验证。
+
+```nu
+nix --option extra-substituters https://eon-yazelix.cachix.org develop
+```

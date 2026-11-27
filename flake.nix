@@ -54,6 +54,8 @@
           homes = config.home-manager.users;
         in
         assert config.nix.settings.require-sigs;
+        assert builtins.elem "https://eon-yazelix.cachix.org" config.nix.settings.extra-trusted-substituters;
+        assert !(builtins.elem "https://eon-yazelix.cachix.org" (config.nix.settings.substituters ++ config.nix.settings.extra-substituters));
         assert
           config.nix.settings.substituters == [
             "https://mirrors.ustc.edu.cn/nix-channels/store?priority=10"
@@ -67,6 +69,7 @@
         assert nixpkgs.lib.all (key: builtins.elem key config.nix.settings.extra-trusted-public-keys) [
           "niks3.numtide.com-1:DTx8wZduET09hRmMtKdQDxNNthLQETkc/yaX7M4qK0g="
           "yazelix.cachix.org-1:ZgxIjQvaP0VTWL8Racx27mpUNzDJ97xC2y7QWYjmGNM="
+          "eon-yazelix.cachix.org-1:kPIp7u0Gjoz0GNzmRqeaqs798vU2raSOUpK+3xi7oK0="
         ];
         assert nixpkgs.lib.all
           (name: !(nixpkgs.lib.attrByPath [ "programs" "yazelix" "enable" ] false homes.${name}))
